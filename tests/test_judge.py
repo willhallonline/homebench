@@ -11,6 +11,21 @@ def test_judge_parses_score():
     assert "5/5" in grade.detail
 
 
+def test_judge_rejects_unformatted_reasoning_as_score():
+    from types import SimpleNamespace
+    from unittest.mock import patch
+
+    provider = FakeProvider()
+    judge = LLMJudge(provider, "smart:8b")
+    reply = "The user wants me to summarize this in 1 or 2 sentences."
+    with patch.object(provider, "generate", return_value=SimpleNamespace(text=reply)):
+        grade = judge.score("summarize the report", "A summary.", "A reference.")
+
+    assert not grade.passed
+    assert grade.score == 0.0
+    assert grade.detail.startswith("judge gave no score:")
+
+
 def test_runner_includes_open_tasks_with_judge():
     from homebench.runner import RunConfig, Runner
 
