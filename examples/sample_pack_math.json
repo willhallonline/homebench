@@ -1,0 +1,146 @@
+{
+  "name": "math-progressive",
+  "description": "Twenty math questions ordered from basic arithmetic through algebra, probability, number theory, and calculus. Each answer is deterministically graded.",
+  "tasks": [
+    {
+      "id": "math_01_addition",
+      "category": "math",
+      "prompt": "What is 38 + 57? End with the final answer on its own line.",
+      "grader": { "type": "exact_number", "value": 95 },
+      "reference": "95"
+    },
+    {
+      "id": "math_02_subtraction",
+      "category": "math",
+      "prompt": "What is 1000 - 487? End with the final answer on its own line.",
+      "grader": { "type": "exact_number", "value": 513 },
+      "reference": "513"
+    },
+    {
+      "id": "math_03_multiplication",
+      "category": "math",
+      "prompt": "What is 24 multiplied by 17? End with the final answer on its own line.",
+      "grader": { "type": "exact_number", "value": 408 },
+      "reference": "408"
+    },
+    {
+      "id": "math_04_division",
+      "category": "math",
+      "prompt": "What is 936 divided by 24? End with the final answer on its own line.",
+      "grader": { "type": "exact_number", "value": 39 },
+      "reference": "39"
+    },
+    {
+      "id": "math_05_order_operations",
+      "category": "math",
+      "prompt": "Evaluate 18 + 6 * 7 using standard order of operations. End with the final answer on its own line.",
+      "grader": { "type": "exact_number", "value": 60 },
+      "reference": "60"
+    },
+    {
+      "id": "math_06_mixed_operations",
+      "category": "math",
+      "prompt": "Evaluate 144 / 12 + 3^3, where ^ means exponentiation. End with the final answer on its own line.",
+      "grader": { "type": "exact_number", "value": 39 },
+      "reference": "39"
+    },
+    {
+      "id": "math_07_fractions",
+      "category": "math",
+      "prompt": "Compute 3/4 + 5/8. Give the answer as a decimal. End with the final answer on its own line.",
+      "grader": { "type": "exact_number", "value": 1.375 },
+      "reference": "1.375"
+    },
+    {
+      "id": "math_08_percentage",
+      "category": "math",
+      "prompt": "What is 15% of 240? End with the final answer on its own line.",
+      "grader": { "type": "exact_number", "value": 36 },
+      "reference": "36"
+    },
+    {
+      "id": "math_09_ratio",
+      "category": "math",
+      "prompt": "A mixture contains water and flour in a ratio of 5:3. If the total mixture is 64 cups, how many cups are water? End with the final answer on its own line.",
+      "grader": { "type": "exact_number", "value": 40 },
+      "reference": "40"
+    },
+    {
+      "id": "math_10_linear_equation",
+      "category": "math",
+      "prompt": "Solve 4x - 9 = 43. What is x? End with the final answer on its own line.",
+      "grader": { "type": "exact_number", "value": 13 },
+      "reference": "13"
+    },
+    {
+      "id": "math_11_system_equations",
+      "category": "math",
+      "prompt": "Solve the system x + y = 23 and 2x - y = 10. What is x? End with the final answer on its own line.",
+      "grader": { "type": "exact_number", "value": 11 },
+      "reference": "11"
+    },
+    {
+      "id": "math_12_powers_roots",
+      "category": "math",
+      "prompt": "Evaluate 2^5 + 3 * sqrt(144), where ^ means exponentiation and sqrt is the positive square root. End with the final answer on its own line.",
+      "grader": { "type": "exact_number", "value": 68 },
+      "reference": "68"
+    },
+    {
+      "id": "math_13_arithmetic_sequence",
+      "category": "math",
+      "prompt": "An arithmetic sequence begins 4, 9, 14, ... What is its 20th term? End with the final answer on its own line.",
+      "grader": { "type": "exact_number", "value": 99 },
+      "reference": "99"
+    },
+    {
+      "id": "math_14_geometric_sum",
+      "category": "math",
+      "prompt": "What is the sum of the first eight terms of the geometric sequence 3, 6, 12, 24, ...? End with the final answer on its own line.",
+      "grader": { "type": "exact_number", "value": 765 },
+      "reference": "765"
+    },
+    {
+      "id": "math_15_combinations",
+      "category": "math",
+      "prompt": "How many different groups of 3 can be chosen from 10 distinct people, when order does not matter? End with the final answer on its own line.",
+      "grader": { "type": "exact_number", "value": 120 },
+      "reference": "120"
+    },
+    {
+      "id": "math_16_probability",
+      "category": "math",
+      "prompt": "A bag contains 4 red, 3 blue, and 5 green marbles. If one marble is selected uniformly at random, what is the probability it is not green? Give a decimal rounded to 6 places. End with the final answer on its own line.",
+      "grader": { "type": "exact_number", "value": 0.583333, "tol": 0.000001 },
+      "reference": "0.583333"
+    },
+    {
+      "id": "math_17_pythagorean_theorem",
+      "category": "math",
+      "prompt": "A right triangle has hypotenuse 13 and one leg of length 5. What is the length of the other leg? End with the final answer on its own line.",
+      "grader": { "type": "exact_number", "value": 12 },
+      "reference": "12"
+    },
+    {
+      "id": "math_18_greatest_common_divisor",
+      "category": "math",
+      "prompt": "What is the greatest common divisor of 756 and 630? End with the final answer on its own line.",
+      "grader": { "type": "exact_number", "value": 126 },
+      "reference": "126"
+    },
+    {
+      "id": "math_19_derivative",
+      "category": "math",
+      "prompt": "For f(x) = x^3 - 4x^2 + x, what is f'(3)? End with the final answer on its own line.",
+      "grader": { "type": "exact_number", "value": 4 },
+      "reference": "4"
+    },
+    {
+      "id": "math_20_definite_integral",
+      "category": "math",
+      "prompt": "Evaluate the definite integral from 0 to 3 of (2x^3 - 3x + 4) dx. End with the final answer on its own line.",
+      "grader": { "type": "exact_number", "value": 39 },
+      "reference": "39"
+    }
+  ]
+}

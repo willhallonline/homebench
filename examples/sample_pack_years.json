@@ -1,0 +1,132 @@
+{
+  "name": "nobel-prizes-2021-2026",
+  "description": "Year-focused factual tasks. Nobel Prize sources: https://www.nobelprize.org/all-nobel-prizes-2021/ ; https://www.nobelprize.org/all-nobel-prizes-2022/ ; https://www.nobelprize.org/all-nobel-prizes-2023/ ; https://www.nobelprize.org/all-nobel-prizes-2024/ ; https://www.nobelprize.org/all-nobel-prizes-2025/ ; https://www.nobelprize.org/all-nobel-prizes-2026/ . UK Prime Minister sources: https://www.gov.uk/government/history/past-prime-ministers ; https://www.gov.uk/government/ministers/prime-minister",
+  "tasks": [
+    {
+      "id": "uk_pm_2021",
+      "category": "factual",
+      "prompt": "Who was the Prime Minister of the United Kingdom throughout 2021? Answer with the person's name.",
+      "grader": { "type": "contains_any", "values": ["Boris Johnson"] },
+      "reference": "Boris Johnson"
+    },
+    {
+      "id": "nobel_2021_laureate",
+      "category": "factual",
+      "prompt": "Name one laureate who received the 2021 Nobel Prize in Physics.",
+      "grader": { "type": "contains_any", "values": ["Syukuro Manabe", "Klaus Hasselmann", "Giorgio Parisi"] },
+      "reference": "Syukuro Manabe, Klaus Hasselmann, and Giorgio Parisi"
+    },
+    {
+      "id": "nobel_2021_contribution",
+      "category": "factual",
+      "prompt": "What broad subject did the 2021 Nobel Prize in Physics recognize? Answer with a short phrase.",
+      "grader": { "type": "contains_any", "values": ["climate", "complex physical systems"] },
+      "reference": "Groundbreaking contributions to understanding complex physical systems, including Earth's climate"
+    },
+    {
+      "id": "uk_pm_2022",
+      "category": "factual",
+      "prompt": "Name all the people who served as Prime Minister of the United Kingdom at any point during 2022.",
+      "grader": { "type": "regex", "pattern": "(?s)(?=.*Boris Johnson)(?=.*(?:Liz|Elizabeth) Truss)(?=.*Rishi Sunak)" },
+      "reference": "Boris Johnson, Liz Truss (Elizabeth Truss), and Rishi Sunak"
+    },
+    {
+      "id": "nobel_2022_laureate",
+      "category": "factual",
+      "prompt": "Name one laureate who received the 2022 Nobel Prize in Physics.",
+      "grader": { "type": "contains_any", "values": ["Alain Aspect", "John F. Clauser", "John Clauser", "Anton Zeilinger"] },
+      "reference": "Alain Aspect, John F. Clauser, and Anton Zeilinger"
+    },
+    {
+      "id": "nobel_2022_contribution",
+      "category": "factual",
+      "prompt": "What experimental subject did the 2022 Nobel Prize in Physics recognize? Answer with a short phrase.",
+      "grader": { "type": "contains_any", "values": ["entangled photons", "quantum information"] },
+      "reference": "Experiments with entangled photons and pioneering quantum information science"
+    },
+    {
+      "id": "uk_pm_2023",
+      "category": "factual",
+      "prompt": "Who was the Prime Minister of the United Kingdom throughout 2023? Answer with the person's name.",
+      "grader": { "type": "contains_any", "values": ["Rishi Sunak"] },
+      "reference": "Rishi Sunak"
+    },
+    {
+      "id": "nobel_2023_laureate",
+      "category": "factual",
+      "prompt": "Name one laureate who received the 2023 Nobel Prize in Chemistry.",
+      "grader": { "type": "contains_any", "values": ["Moungi G. Bawendi", "Moungi Bawendi", "Louis E. Brus", "Louis Brus", "Aleksey Yekimov"] },
+      "reference": "Moungi G. Bawendi, Louis E. Brus, and Aleksey Yekimov"
+    },
+    {
+      "id": "nobel_2023_contribution",
+      "category": "factual",
+      "prompt": "What did the 2023 Nobel Prize in Chemistry recognize the laureates for? Answer with a short phrase.",
+      "grader": { "type": "contains_any", "values": ["quantum dots"] },
+      "reference": "The discovery and synthesis of quantum dots"
+    },
+    {
+      "id": "uk_pm_2024",
+      "category": "factual",
+      "prompt": "Name all the people who served as Prime Minister of the United Kingdom at any point during 2024.",
+      "grader": { "type": "regex", "pattern": "(?s)(?=.*Rishi Sunak)(?=.*Keir Starmer)" },
+      "reference": "Rishi Sunak and Keir Starmer"
+    },
+    {
+      "id": "nobel_2024_laureate",
+      "category": "factual",
+      "prompt": "Name one laureate who received the 2024 Nobel Prize in Physiology or Medicine.",
+      "grader": { "type": "contains_any", "values": ["Victor Ambros", "Gary Ruvkun"] },
+      "reference": "Victor Ambros and Gary Ruvkun"
+    },
+    {
+      "id": "nobel_2024_contribution",
+      "category": "factual",
+      "prompt": "What discovery did the 2024 Nobel Prize in Physiology or Medicine recognize? Answer with a short phrase.",
+      "grader": { "type": "contains_any", "values": ["microRNA"] },
+      "reference": "The discovery of microRNA and its role in post-transcriptional gene regulation"
+    },
+    {
+      "id": "uk_pm_2025",
+      "category": "factual",
+      "prompt": "Who was the Prime Minister of the United Kingdom throughout 2025? Answer with the person's name.",
+      "grader": { "type": "contains_any", "values": ["Keir Starmer"] },
+      "reference": "Keir Starmer"
+    },
+    {
+      "id": "nobel_2025_laureate",
+      "category": "factual",
+      "prompt": "Who received the 2025 Nobel Peace Prize? Answer with the laureate's name.",
+      "grader": { "type": "contains_any", "values": ["Maria Corina Machado", "María Corina Machado"] },
+      "reference": "Maria Corina Machado"
+    },
+    {
+      "id": "nobel_2025_contribution",
+      "category": "factual",
+      "prompt": "What cause did the 2025 Nobel Peace Prize recognize? A) Promoting democratic rights in Venezuela B) Discovering quantum dots C) Developing an influenza vaccine. Reply with only the letter.",
+      "grader": { "type": "multiple_choice", "value": "A" },
+      "reference": "A"
+    },
+    {
+      "id": "uk_pm_2026",
+      "category": "factual",
+      "prompt": "As of October 28, 2026, who is the Prime Minister of the United Kingdom? Answer with the person's name.",
+      "grader": { "type": "contains_any", "values": ["Andy Burnham"] },
+      "reference": "Andy Burnham"
+    },
+    {
+      "id": "nobel_2026_laureate",
+      "category": "factual",
+      "prompt": "Who received the 2026 Nobel Peace Prize? Answer with the laureate's name.",
+      "grader": { "type": "contains_any", "values": ["Navanethem Navi Pillay", "Navanethem Pillay", "Navi Pillay"] },
+      "reference": "Navanethem Navi Pillay"
+    },
+    {
+      "id": "nobel_2026_contribution",
+      "category": "factual",
+      "prompt": "What did the 2026 Nobel Peace Prize recognize? A) The discovery of microRNA B) Efforts to promote peace and international law C) Research into quantum dots. Reply with only the letter.",
+      "grader": { "type": "multiple_choice", "value": "B" },
+      "reference": "B"
+    }
+  ]
+}

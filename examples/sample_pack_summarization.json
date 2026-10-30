@@ -1,0 +1,126 @@
+{
+  "name": "faithful-summarization",
+  "description": "Twenty short summarization tasks scored by an LLM judge. Summaries should retain the central facts and avoid adding unsupported details; use --judge when running this pack.",
+  "tasks": [
+    {
+      "id": "sum_01_green_roofs",
+      "category": "open",
+      "prompt": "Summarize this report in one or two sentences, preserving its main result and limitation without adding facts: A city installed green roofs on six public buildings. During the first summer, those roofs recorded lower surface temperatures than nearby conventional roofs. The report did not measure indoor energy use or long-term maintenance costs.",
+      "reference": "The six green roofs had cooler surfaces than conventional roofs during the first summer; indoor energy use and long-term maintenance costs were not measured."
+    },
+    {
+      "id": "sum_02_clinic_waits",
+      "category": "open",
+      "prompt": "Summarize this report in one or two sentences, preserving the figures and caveat: A clinic introduced online appointment reminders in January. By March, its missed-appointment rate fell from 12% to 8%. The clinic noted that staffing levels also changed during the same period, so the reminders cannot be credited as the sole cause.",
+      "reference": "After online reminders began, missed appointments fell from 12% to 8%; staffing also changed, so the reminders cannot be identified as the sole cause."
+    },
+    {
+      "id": "sum_03_bus_pilot",
+      "category": "open",
+      "prompt": "Summarize this report in one or two sentences: A six-month bus pilot added evening service on Route 4. Average weekday ridership rose by 14%, while weekend ridership was unchanged. The pilot used temporary funding, and the transit board has not decided whether to make the service permanent.",
+      "reference": "During the Route 4 evening-service pilot, weekday ridership rose by 14% while weekend ridership was unchanged. Funding was temporary, and the service's future is undecided."
+    },
+    {
+      "id": "sum_04_coastal_sensors",
+      "category": "open",
+      "prompt": "Summarize this report in one or two sentences without overstating the findings: Researchers placed water-level sensors at four coastal sites for eight months. The sensors captured several storm-related surges that were missed by the nearest hourly gauge. One sensor stopped working after five months, and the study did not estimate future flood risk.",
+      "reference": "Sensors at four sites captured some storm surges missed by an hourly gauge, though one failed after five months; the study did not estimate future flood risk."
+    },
+    {
+      "id": "sum_05_school_gardens",
+      "category": "open",
+      "prompt": "Summarize this report in one or two sentences, retaining the measured outcome: Ten schools created vegetable gardens. At the end of one term, participating students could name more locally grown vegetables than students at comparison schools. The evaluation did not track whether students changed their diets.",
+      "reference": "Students at the ten garden schools identified more locally grown vegetables after one term than comparison students, but dietary changes were not measured."
+    },
+    {
+      "id": "sum_06_water_trial",
+      "category": "open",
+      "prompt": "Summarize this trial in one or two sentences: Two hundred households were offered a free water-saving kit, and 118 accepted it. Among households that installed the kit, average water use was 9% lower after three months than before installation. There was no randomized control group.",
+      "reference": "Of 200 households offered a kit, 118 accepted it. Among those who installed it, average water use was 9% lower after three months; there was no randomized control group."
+    },
+    {
+      "id": "sum_07_archive_digitization",
+      "category": "open",
+      "prompt": "Summarize this update in one or two sentences: A regional archive digitized 18,000 photographs from its 1950-1970 collection. Searchable captions are available for about 70% of the images. The remaining images can be viewed but have not yet been catalogued, and the archive has not announced a completion date.",
+      "reference": "The archive digitized 18,000 photographs; about 70% have searchable captions, while the rest remain uncatalogued and no completion date has been set."
+    },
+    {
+      "id": "sum_08_battery_test",
+      "category": "open",
+      "prompt": "Summarize this test in one or two sentences: In a laboratory comparison, Battery A completed 820 charge cycles before reaching the test's replacement threshold, while Battery B completed 760. Both were tested at the same temperature. The report cautioned that performance in household devices may differ.",
+      "reference": "Under the laboratory conditions, Battery A lasted 820 cycles versus 760 for Battery B; real-device performance may differ."
+    },
+    {
+      "id": "sum_09_market_survey",
+      "category": "open",
+      "prompt": "Summarize this survey in one or two sentences, including its scope: A survey of 600 adults in one province found that 54% preferred purchasing groceries in person. The sample was collected online over one week. The report warns that the results may not represent other regions or people without internet access.",
+      "reference": "In a one-week online survey of 600 adults in one province, 54% preferred in-person grocery shopping; the sample may not represent other regions or offline populations."
+    },
+    {
+      "id": "sum_10_library_hours",
+      "category": "open",
+      "prompt": "Summarize the decision in one or two sentences: The library board approved keeping two branches open until 8 p.m. on Tuesdays and Thursdays for a three-month trial. The trial will be reviewed using attendance and staffing costs. Sunday hours will not change.",
+      "reference": "Two branches will test extended Tuesday and Thursday hours until 8 p.m. for three months, with attendance and staffing costs informing review; Sunday hours stay the same."
+    },
+    {
+      "id": "sum_11_farm_trial",
+      "category": "open",
+      "prompt": "Summarize this agricultural trial in one or two sentences: On 12 farms, a new mulch was associated with 11% less soil moisture loss over eight weeks than the farms' usual mulch. Yields were similar in both groups. The farms were not randomly assigned to treatments.",
+      "reference": "Across 12 non-randomized farms, the new mulch was associated with 11% less moisture loss over eight weeks, while yields were similar."
+    },
+    {
+      "id": "sum_12_transit_app",
+      "category": "open",
+      "prompt": "Summarize this product update in one or two sentences: The transit agency's app now displays elevator outages reported by station staff. It does not yet show estimated repair times, and riders can still report an outage by phone. The update is available on Android and iOS.",
+      "reference": "The app now shows staff-reported elevator outages on Android and iOS, but not repair estimates; phone reporting remains available."
+    },
+    {
+      "id": "sum_13_museum_audio",
+      "category": "open",
+      "prompt": "Summarize this evaluation in one or two sentences: A museum tested audio guides in three galleries for four weeks. Visitors who used them spent longer in the galleries on average, but the museum did not randomly assign visitors or test whether they learned more.",
+      "reference": "Audio-guide users spent longer in three galleries during a four-week test, but the non-randomized evaluation did not establish a learning benefit."
+    },
+    {
+      "id": "sum_14_energy_audit",
+      "category": "open",
+      "prompt": "Summarize this audit in one or two sentences: An audit of 40 municipal buildings found that 15 had heating controls operating outside their documented schedules. The audit estimated that correcting those schedules could reduce heating use, but no changes had been made when the report was published.",
+      "reference": "Fifteen of 40 buildings had heating controls outside their schedules; correcting them may reduce heating use, but the changes had not yet been implemented."
+    },
+    {
+      "id": "sum_15_food_rescue",
+      "category": "open",
+      "prompt": "Summarize this monthly update in one or two sentences: A food-rescue network collected 2.4 tonnes of surplus produce from 11 shops in May and delivered it to four community kitchens. The network said the total was 0.3 tonnes higher than April. It did not estimate how many meals the produce provided.",
+      "reference": "In May, the network collected 2.4 tonnes from 11 shops for four kitchens, 0.3 tonnes more than April; meal counts were not estimated."
+    },
+    {
+      "id": "sum_16_language_program",
+      "category": "open",
+      "prompt": "Summarize this program report in one or two sentences: Thirty-two adults enrolled in a 10-week evening language course, and 25 completed it. On a vocabulary quiz, completers improved their average score from 61 to 74. There was no comparison group, and the report gives no results for people who left early.",
+      "reference": "Of 32 enrollees, 25 completed the course and their average vocabulary score rose from 61 to 74; without a comparison group, the course's effect is uncertain."
+    },
+    {
+      "id": "sum_17_road_safety",
+      "category": "open",
+      "prompt": "Summarize this traffic report in one or two sentences: After a new crosswalk was installed, the city recorded 22% fewer vehicle speeds above the limit on that street over the next two months. Traffic volume also fell during the period because of nearby construction, so the report cannot isolate the crosswalk's effect.",
+      "reference": "Speeds above the limit fell 22% after a crosswalk was installed, but construction also reduced traffic, preventing the report from isolating cause."
+    },
+    {
+      "id": "sum_18_community_wifi",
+      "category": "open",
+      "prompt": "Summarize this service report in one or two sentences: Free Wi-Fi was added to five community centers. Over the first month, the centers recorded 3,200 connections, with the busiest center accounting for 1,100. The report counts connections, not unique users.",
+      "reference": "Five centers recorded 3,200 Wi-Fi connections in the first month, 1,100 at the busiest center; connections do not represent unique users."
+    },
+    {
+      "id": "sum_19_clinic_translation",
+      "category": "open",
+      "prompt": "Summarize this service change in one or two sentences: A clinic began offering appointment instructions in four additional languages. During the first six weeks, staff used the translated sheets at 140 appointments. The clinic has not yet measured effects on attendance or patient understanding.",
+      "reference": "The clinic added instructions in four languages and used them at 140 appointments in six weeks; effects on attendance and understanding are unmeasured."
+    },
+    {
+      "id": "sum_20_recycling_trial",
+      "category": "open",
+      "prompt": "Summarize this waste trial in one or two sentences: Three apartment buildings received food-scrap bins for two months. The amount of food waste in general rubbish fell by an average of 18% compared with the two months before the trial. The study did not compare the buildings with apartments that had no bins.",
+      "reference": "Across three buildings, food waste in general rubbish fell by an average of 18% during a two-month bin trial compared with the prior period; there was no control group."
+    }
+  ]
+}
