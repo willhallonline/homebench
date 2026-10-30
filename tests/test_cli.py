@@ -29,3 +29,16 @@ def test_run_flags_parse():
     assert args.no_tui is True
     assert args.limit == 3
     assert args.judge == "m"
+
+
+def test_task_flags_accept_multiple_and_repeated_packs():
+    parser = build_parser()
+    args = parser.parse_args([
+        "run",
+        "--tasks", "first.json", "second.json",
+        "--tasks", "third.json",
+        "--add-tasks", "fourth.json", "fifth.json",
+        "--add-tasks", "sixth.json",
+    ])
+    assert args.tasks == ["first.json", "second.json", "third.json"]
+    assert args.add_tasks == ["fourth.json", "fifth.json", "sixth.json"]

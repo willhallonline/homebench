@@ -78,8 +78,8 @@ homebench --refresh-cache        # recompute instead of reusing cached responses
 homebench --no-quality           # speed + memory only (fast)
 homebench --no-speed             # quality only
 homebench --judge qwen3:8b       # enable LLM-as-judge (adds open-ended tasks)
-homebench --tasks mypack.yaml    # use a custom task pack instead of the built-in suite
-homebench --add-tasks mypack.yaml  # add a pack on top of the built-in suite
+homebench --tasks pack1.yaml pack2.json  # use several custom packs instead of the built-in suite
+homebench --add-tasks pack1.yaml pack2.json  # add several packs to the built-in suite
 homebench --label "before tuning"  # tag this run for later diffing
 homebench --md results.md        # also export a Markdown report
 homebench --json results.json    # also export raw JSON
