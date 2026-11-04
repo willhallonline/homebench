@@ -215,13 +215,32 @@ class Runner:
     def _run_quality(self, model: ModelInfo, observer: Observer) -> List[TaskResult]:
         suite = resolve_suite(self.config, self.judge is not None)
         results: List[TaskResult] = []
+        pending_judgement = []
         for task in suite:
-            tr = self._run_task(model, task)
+            tr = self._run_task(model, task, defer_judge=self.judge is not None)
             results.append(tr)
+            if tr.detail == "pending judge":
+                pending_judgement.append((task, tr))
+                continue
             _emit(
                 observer, EV_TASK_DONE, model=model.name, task_id=task.id,
                 category=task.category, score=tr.score, passed=tr.passed,
             )
+
+        if pending_judgement:
+            _emit(
+                observer, EV_PHASE, model=model.name, phase="judge",
+                note=f"scoring {len(pending_judgement)} open-ended tasks",
+            )
+            for task, tr in pending_judgement:
+                grade = self.judge.score(task.prompt, tr.response, task.reference)
+                tr.score = grade.score
+                tr.passed = grade.passed
+                tr.detail = grade.detail
+                _emit(
+                    observer, EV_TASK_DONE, model=model.name, task_id=task.id,
+                    category=task.category, score=tr.score, passed=tr.passed,
+                )
         return results
 
     def _cached_response(self, model: ModelInfo, task: Task):
@@ -237,7 +256,8 @@ class Runner:
             return None
         return hit["response"], int(hit.get("output_tokens", 0) or 0)
 
-    def _run_task(self, model: ModelInfo, task: Task) -> TaskResult:
+    def _run_task(self, model: ModelInfo, task: Task,
+                  defer_judge: bool = False) -> TaskResult:
         cfg = self.config
         cached = self._cached_response(model, task)
         if cached is not None:
@@ -269,8 +289,10 @@ class Runner:
 
         if task.grader is not None:
             grade = task.grader(response)
-        elif self.judge is not None:
+        elif self.judge is not None and not defer_judge:
             grade = self.judge.score(task.prompt, response, task.reference)
+        elif self.judge is not None:
+            grade = None
         else:
             grade = None  # open-ended task with no judge available
 
@@ -278,7 +300,8 @@ class Runner:
             return TaskResult(
                 task.id, task.category, 0.0, False, latency_s=latency,
                 output_tokens=out_tokens, response=response,
-                detail="skipped (no grader/judge)",
+                detail=("pending judge" if defer_judge and self.judge is not None
+                        else "skipped (no grader/judge)"),
             )
         return TaskResult(
             task.id, task.category, grade.score, grade.passed,
