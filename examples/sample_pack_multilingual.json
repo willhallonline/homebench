@@ -1,0 +1,146 @@
+{
+  "name": "multilingual-understanding",
+  "description": "Twenty short comprehension tasks in Spanish, French, German, Japanese, and Chinese. Answer in the requested language or format; objective answers are deterministically graded.",
+  "tasks": [
+    {
+      "id": "lang_01_spanish_total_cats",
+      "category": "multilingual",
+      "prompt": "Lee: Ana tiene dos gatos y Luis tiene uno. ¿Cuántos gatos tienen en total? Responde solo con un número.",
+      "grader": { "type": "exact_number", "value": 3 },
+      "reference": "3"
+    },
+    {
+      "id": "lang_02_spanish_closing_time",
+      "category": "multilingual",
+      "prompt": "Lee: La biblioteca abre a las 9:00 y cierra a las 18:00. ¿A qué hora cierra? Responde solo con la hora.",
+      "grader": { "type": "contains_any", "values": ["18:00", "18 h", "6:00 p.m.", "6:00 pm", "6 pm", "6 de la tarde"] },
+      "reference": "18:00"
+    },
+    {
+      "id": "lang_03_spanish_weight",
+      "category": "multilingual",
+      "prompt": "Lee: El paquete pesa tres kilogramos. ¿Cuántos kilogramos pesa? Responde solo con un número.",
+      "grader": { "type": "exact_number", "value": 3 },
+      "reference": "3"
+    },
+    {
+      "id": "lang_04_spanish_destination",
+      "category": "multilingual",
+      "prompt": "Lee: El tren sale de Madrid y llega a Toledo. ¿Cuál es el destino del tren? Responde solo con el nombre de la ciudad.",
+      "grader": { "type": "contains_any", "values": ["Toledo"] },
+      "reference": "Toledo"
+    },
+    {
+      "id": "lang_05_french_closing_time",
+      "category": "multilingual",
+      "prompt": "Lis: Le café ouvre à 8 h et ferme à 16 h. À quelle heure ferme-t-il ? Répondez seulement avec l'heure.",
+      "grader": { "type": "contains_any", "values": ["16 h", "16h", "16:00", "4 p.m.", "4 pm"] },
+      "reference": "16 h"
+    },
+    {
+      "id": "lang_06_french_books_left",
+      "category": "multilingual",
+      "prompt": "Lis: Luc a quatre livres. Il en prête un à sa sœur. Combien de livres lui reste-t-il ? Répondez seulement avec un nombre.",
+      "grader": { "type": "exact_number", "value": 3 },
+      "reference": "3"
+    },
+    {
+      "id": "lang_07_french_cat_location",
+      "category": "multilingual",
+      "prompt": "Lis: Le chat dort sous la chaise. Où dort le chat ? Répondez brièvement en anglais ou en français.",
+      "grader": { "type": "contains_any", "values": ["under the chair", "sous la chaise"] },
+      "reference": "Under the chair (sous la chaise)"
+    },
+    {
+      "id": "lang_08_french_meeting_day",
+      "category": "multilingual",
+      "prompt": "Lis: La réunion a lieu jeudi. Quel jour a lieu la réunion ? Répondez en anglais ou en français.",
+      "grader": { "type": "contains_any", "values": ["Thursday", "jeudi"] },
+      "reference": "Thursday (jeudi)"
+    },
+    {
+      "id": "lang_09_german_occupied_seats",
+      "category": "multilingual",
+      "prompt": "Lies: Ein Bus hat 24 Plätze. Sieben Plätze sind leer. Wie viele Plätze sind besetzt? Antworte nur mit einer Zahl.",
+      "grader": { "type": "exact_number", "value": 17 },
+      "reference": "17"
+    },
+    {
+      "id": "lang_10_german_arrival_time",
+      "category": "multilingual",
+      "prompt": "Lies: Der Zug fährt um 9:20 Uhr ab. Die Fahrt dauert 35 Minuten. Wann kommt der Zug an? Antworte nur mit der Uhrzeit.",
+      "grader": { "type": "contains_any", "values": ["9:55"] },
+      "reference": "9:55 Uhr"
+    },
+    {
+      "id": "lang_11_german_green_apples",
+      "category": "multilingual",
+      "prompt": "Lies: Mara kauft zwei rote Äpfel und drei grüne Äpfel. Wie viele grüne Äpfel kauft sie? Antworte nur mit einer Zahl.",
+      "grader": { "type": "exact_number", "value": 3 },
+      "reference": "3"
+    },
+    {
+      "id": "lang_12_german_closed_day",
+      "category": "multilingual",
+      "prompt": "Lies: Das Museum ist am Dienstag geschlossen. An allen anderen Tagen ist es geöffnet. An welchem Tag ist es geschlossen? Antworte auf Englisch oder Deutsch.",
+      "grader": { "type": "contains_any", "values": ["Tuesday", "Dienstag"] },
+      "reference": "Tuesday (Dienstag)"
+    },
+    {
+      "id": "lang_13_japanese_apples_left",
+      "category": "multilingual",
+      "prompt": "読んでください：りんごが4個あります。2個食べました。残りはいくつですか。数字だけで答えてください。",
+      "grader": { "type": "exact_number", "value": 2 },
+      "reference": "2"
+    },
+    {
+      "id": "lang_14_japanese_library_day",
+      "category": "multilingual",
+      "prompt": "読んでください：図書館は月曜日に休みで、火曜日に開きます。何曜日に開きますか。英語か日本語で答えてください。",
+      "grader": { "type": "contains_any", "values": ["Tuesday", "火曜日"] },
+      "reference": "Tuesday (火曜日)"
+    },
+    {
+      "id": "lang_15_japanese_bus_arrival",
+      "category": "multilingual",
+      "prompt": "読んでください：バスは午前7時に駅を出発し、20分後に学校に着きます。何時に着きますか。時刻だけで答えてください。",
+      "grader": { "type": "contains_any", "values": ["7:20", "7時20分"] },
+      "reference": "7:20 a.m. (午前7時20分)"
+    },
+    {
+      "id": "lang_16_japanese_cat_color",
+      "category": "multilingual",
+      "prompt": "読んでください：猫は白色です。猫は何色ですか。英語か日本語で短く答えてください。",
+      "grader": { "type": "contains_any", "values": ["white", "白"] },
+      "reference": "White (白色)"
+    },
+    {
+      "id": "lang_17_chinese_meeting_end",
+      "category": "multilingual",
+      "prompt": "阅读：会议下午两点开始，持续一个小时。会议几点结束？只用数字回答小时。",
+      "grader": { "type": "exact_number", "value": 3 },
+      "reference": "3"
+    },
+    {
+      "id": "lang_18_chinese_apples_left",
+      "category": "multilingual",
+      "prompt": "阅读：小王有5个苹果，送给朋友2个。他还剩几个苹果？只用数字回答。",
+      "grader": { "type": "exact_number", "value": 3 },
+      "reference": "3"
+    },
+    {
+      "id": "lang_19_chinese_closed_day",
+      "category": "multilingual",
+      "prompt": "阅读：餐厅星期日休息，星期一营业。餐厅哪天休息？请用英文或中文回答。",
+      "grader": { "type": "contains_any", "values": ["Sunday", "星期日", "星期天"] },
+      "reference": "Sunday (星期日)"
+    },
+    {
+      "id": "lang_20_chinese_pencils_total",
+      "category": "multilingual",
+      "prompt": "阅读：盒子里有3支蓝色铅笔和4支红色铅笔。一共有多少支铅笔？只用数字回答。",
+      "grader": { "type": "exact_number", "value": 7 },
+      "reference": "7"
+    }
+  ]
+}

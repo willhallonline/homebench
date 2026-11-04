@@ -1,0 +1,146 @@
+{
+  "name": "reading-comprehension",
+  "description": "Twenty grounded reading-comprehension questions across four short reports. Answers are contained in or directly calculated from each report.",
+  "tasks": [
+    {
+      "id": "read_01_opened",
+      "category": "comprehension",
+      "prompt": "Read the report: Harbor Library opened its new reading room on 12 March. The room has 36 seats. On weekdays it is open from 8:30 a.m. to 6:00 p.m.; on Saturdays from 10:00 a.m. to 2:00 p.m.; it is closed Sundays. In its first week it logged 420 visits, including 96 on Saturday. On what date did the reading room open? Answer with the date.",
+      "grader": { "type": "contains_any", "values": ["12 March", "March 12", "March 12th", "12th March"] },
+      "reference": "12 March"
+    },
+    {
+      "id": "read_02_seats",
+      "category": "comprehension",
+      "prompt": "Read the report: Harbor Library opened its new reading room on 12 March. The room has 36 seats. On weekdays it is open from 8:30 a.m. to 6:00 p.m.; on Saturdays from 10:00 a.m. to 2:00 p.m.; it is closed Sundays. In its first week it logged 420 visits, including 96 on Saturday. How many seats are in the room? Answer with a numeral.",
+      "grader": { "type": "exact_number", "value": 36 },
+      "reference": "36"
+    },
+    {
+      "id": "read_03_weekday_close",
+      "category": "comprehension",
+      "prompt": "Read the report: Harbor Library opened its new reading room on 12 March. The room has 36 seats. On weekdays it is open from 8:30 a.m. to 6:00 p.m.; on Saturdays from 10:00 a.m. to 2:00 p.m.; it is closed Sundays. In its first week it logged 420 visits, including 96 on Saturday. What time does it close on weekdays? Answer with the time.",
+      "grader": { "type": "contains_any", "values": ["6:00 p.m.", "6:00 pm", "6 pm", "18:00"] },
+      "reference": "6:00 p.m."
+    },
+    {
+      "id": "read_04_first_week_visits",
+      "category": "comprehension",
+      "prompt": "Read the report: Harbor Library opened its new reading room on 12 March. The room has 36 seats. On weekdays it is open from 8:30 a.m. to 6:00 p.m.; on Saturdays from 10:00 a.m. to 2:00 p.m.; it is closed Sundays. In its first week it logged 420 visits, including 96 on Saturday. How many visits were logged in the first week? Answer with a numeral.",
+      "grader": { "type": "exact_number", "value": 420 },
+      "reference": "420"
+    },
+    {
+      "id": "read_05_non_saturday_visits",
+      "category": "comprehension",
+      "prompt": "Read the report: Harbor Library opened its new reading room on 12 March. The room has 36 seats. On weekdays it is open from 8:30 a.m. to 6:00 p.m.; on Saturdays from 10:00 a.m. to 2:00 p.m.; it is closed Sundays. In its first week it logged 420 visits, including 96 on Saturday. How many first-week visits were not on Saturday? Answer with a numeral.",
+      "grader": { "type": "exact_number", "value": 324 },
+      "reference": "324"
+    },
+    {
+      "id": "read_06_earliest_shuttle",
+      "category": "comprehension",
+      "prompt": "Read the report: The Riverside shuttle leaves Central Station at 7:10 a.m. and 7:50 a.m. on weekdays only. Each trip takes 25 minutes to reach the Museum. Adult fare is $3.20 and child fare is $1.50. Last Friday 28 passengers rode the shuttle, including 9 children. What time is the earliest departure? Answer with the time.",
+      "grader": { "type": "contains_any", "values": ["7:10"] },
+      "reference": "7:10 a.m."
+    },
+    {
+      "id": "read_07_shuttle_arrival",
+      "category": "comprehension",
+      "prompt": "Read the report: The Riverside shuttle leaves Central Station at 7:10 a.m. and 7:50 a.m. on weekdays only. Each trip takes 25 minutes to reach the Museum. Adult fare is $3.20 and child fare is $1.50. Last Friday 28 passengers rode the shuttle, including 9 children. If the earliest shuttle leaves on time, when does it reach the Museum? Answer with the time.",
+      "grader": { "type": "contains_any", "values": ["7:35"] },
+      "reference": "7:35 a.m."
+    },
+    {
+      "id": "read_08_child_fare",
+      "category": "comprehension",
+      "prompt": "Read the report: The Riverside shuttle leaves Central Station at 7:10 a.m. and 7:50 a.m. on weekdays only. Each trip takes 25 minutes to reach the Museum. Adult fare is $3.20 and child fare is $1.50. Last Friday 28 passengers rode the shuttle, including 9 children. What is the child fare? Answer with the amount.",
+      "grader": { "type": "contains_any", "values": ["$1.50", "1.50"] },
+      "reference": "$1.50"
+    },
+    {
+      "id": "read_09_adult_passengers",
+      "category": "comprehension",
+      "prompt": "Read the report: The Riverside shuttle leaves Central Station at 7:10 a.m. and 7:50 a.m. on weekdays only. Each trip takes 25 minutes to reach the Museum. Adult fare is $3.20 and child fare is $1.50. Last Friday 28 passengers rode the shuttle, including 9 children. How many adult passengers rode last Friday? Answer with a numeral.",
+      "grader": { "type": "exact_number", "value": 19 },
+      "reference": "19"
+    },
+    {
+      "id": "read_10_shuttle_days",
+      "category": "comprehension",
+      "prompt": "Read the report: The Riverside shuttle leaves Central Station at 7:10 a.m. and 7:50 a.m. on weekdays only. Each trip takes 25 minutes to reach the Museum. Adult fare is $3.20 and child fare is $1.50. Last Friday 28 passengers rode the shuttle, including 9 children. Does the shuttle operate every day, weekdays only, or weekends only? Answer with one of those options.",
+      "grader": { "type": "regex", "pattern": "^\\s*weekdays only[.!]?\\s*$" },
+      "reference": "Weekdays only"
+    },
+    {
+      "id": "read_11_apples_harvested",
+      "category": "comprehension",
+      "prompt": "Read the report: The Orchard Co-op harvested 150 kilograms of apples. It packed 90 kilograms into boxes weighing 5 kilograms each. The remaining apples were processed into juice. Twelve boxes were shipped on Tuesday. The co-op has 30 members. How many kilograms of apples were harvested? Answer with a numeral.",
+      "grader": { "type": "exact_number", "value": 150 },
+      "reference": "150"
+    },
+    {
+      "id": "read_12_boxes_packed",
+      "category": "comprehension",
+      "prompt": "Read the report: The Orchard Co-op harvested 150 kilograms of apples. It packed 90 kilograms into boxes weighing 5 kilograms each. The remaining apples were processed into juice. Twelve boxes were shipped on Tuesday. The co-op has 30 members. How many boxes were packed in total? Answer with a numeral.",
+      "grader": { "type": "exact_number", "value": 18 },
+      "reference": "18"
+    },
+    {
+      "id": "read_13_apples_to_juice",
+      "category": "comprehension",
+      "prompt": "Read the report: The Orchard Co-op harvested 150 kilograms of apples. It packed 90 kilograms into boxes weighing 5 kilograms each. The remaining apples were processed into juice. Twelve boxes were shipped on Tuesday. The co-op has 30 members. How many kilograms of apples were processed into juice? Answer with a numeral.",
+      "grader": { "type": "exact_number", "value": 60 },
+      "reference": "60"
+    },
+    {
+      "id": "read_14_boxes_remaining",
+      "category": "comprehension",
+      "prompt": "Read the report: The Orchard Co-op harvested 150 kilograms of apples. It packed 90 kilograms into boxes weighing 5 kilograms each. The remaining apples were processed into juice. Twelve boxes were shipped on Tuesday. The co-op has 30 members. How many packed boxes remained after Tuesday's shipment? Answer with a numeral.",
+      "grader": { "type": "exact_number", "value": 6 },
+      "reference": "6"
+    },
+    {
+      "id": "read_15_members",
+      "category": "comprehension",
+      "prompt": "Read the report: The Orchard Co-op harvested 150 kilograms of apples. It packed 90 kilograms into boxes weighing 5 kilograms each. The remaining apples were processed into juice. Twelve boxes were shipped on Tuesday. The co-op has 30 members. How many members does the co-op have? Answer with a numeral.",
+      "grader": { "type": "exact_number", "value": 30 },
+      "reference": "30"
+    },
+    {
+      "id": "read_16_cleanup_attendance",
+      "category": "comprehension",
+      "prompt": "Read the report: A park clean-up began at 9:00 a.m. and lasted 2 hours 45 minutes. Eighty-four people were split evenly into three teams. They collected 126 bags of litter; two-thirds of the bags contained recyclable material. How many people attended? Answer with a numeral.",
+      "grader": { "type": "exact_number", "value": 84 },
+      "reference": "84"
+    },
+    {
+      "id": "read_17_team_size",
+      "category": "comprehension",
+      "prompt": "Read the report: A park clean-up began at 9:00 a.m. and lasted 2 hours 45 minutes. Eighty-four people were split evenly into three teams. They collected 126 bags of litter; two-thirds of the bags contained recyclable material. How many people were on each team? Answer with a numeral.",
+      "grader": { "type": "exact_number", "value": 28 },
+      "reference": "28"
+    },
+    {
+      "id": "read_18_cleanup_end_time",
+      "category": "comprehension",
+      "prompt": "Read the report: A park clean-up began at 9:00 a.m. and lasted 2 hours 45 minutes. Eighty-four people were split evenly into three teams. They collected 126 bags of litter; two-thirds of the bags contained recyclable material. At what time did the clean-up end? Answer with the time.",
+      "grader": { "type": "contains_any", "values": ["11:45"] },
+      "reference": "11:45 a.m."
+    },
+    {
+      "id": "read_19_recyclable_bags",
+      "category": "comprehension",
+      "prompt": "Read the report: A park clean-up began at 9:00 a.m. and lasted 2 hours 45 minutes. Eighty-four people were split evenly into three teams. They collected 126 bags of litter; two-thirds of the bags contained recyclable material. How many bags contained recyclable material? Answer with a numeral.",
+      "grader": { "type": "exact_number", "value": 84 },
+      "reference": "84"
+    },
+    {
+      "id": "read_20_total_bags",
+      "category": "comprehension",
+      "prompt": "Read the report: A park clean-up began at 9:00 a.m. and lasted 2 hours 45 minutes. Eighty-four people were split evenly into three teams. They collected 126 bags of litter; two-thirds of the bags contained recyclable material. How many bags of litter were collected in total? Answer with a numeral.",
+      "grader": { "type": "exact_number", "value": 126 },
+      "reference": "126"
+    }
+  ]
+}

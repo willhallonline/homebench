@@ -1,4 +1,5 @@
 import json
+import math
 import os
 
 import pytest
@@ -126,6 +127,76 @@ def test_shipped_example_pack_json():
     for t in tasks:
         if t.grader is not None:
             assert t.grader(t.reference).passed, t.id
+
+
+def test_new_example_packs():
+    counts = {
+        "sample_pack_years.json": 18,
+        "sample_pack_math.json": 20,
+        "sample_pack_comprehension.json": 20,
+        "sample_pack_calibration.json": 20,
+        "sample_pack_instructions.json": 20,
+        "sample_pack_multilingual.json": 20,
+        "sample_pack_summarization.json": 20,
+        "sample_pack_coding.json": 20,
+    }
+    paths = [os.path.join(EXAMPLES, name) for name in counts]
+    for path, expected in zip(paths, counts.values()):
+        tasks = load_pack(path)
+        assert len(tasks) == expected
+        for task in tasks:
+            assert task.reference, task.id
+            if task.grader is not None:
+                assert task.grader(task.reference).passed, task.id
+    tasks = load_packs(paths)
+    assert len(tasks) == sum(counts.values())
+    summary = load_pack(os.path.join(EXAMPLES, "sample_pack_summarization.json"))
+    assert all(task.category == "open" and task.grader is None for task in summary)
+    coding = load_pack(os.path.join(EXAMPLES, "sample_pack_coding.json"))
+    assert all(task.category == "open" and task.grader is None for task in coding)
+
+
+def test_math_pack_answers():
+    expected = [
+        38 + 57, 1000 - 487, 24 * 17, 936 / 24, 18 + 6 * 7,
+        144 / 12 + 3 ** 3, 3 / 4 + 5 / 8, 0.15 * 240, 64 * 5 / 8,
+        (43 + 9) / 4, (23 + 10) / 3, 2 ** 5 + 3 * math.sqrt(144),
+        4 + 19 * 5, sum(3 * 2 ** index for index in range(8)),
+        math.comb(10, 3), round(7 / 12, 6), math.sqrt(13 ** 2 - 5 ** 2),
+        math.gcd(756, 630), 3 * 3 ** 2 - 8 * 3 + 1,
+        (3 ** 4) / 2 - (3 * 3 ** 2) / 2 + 4 * 3,
+    ]
+    tasks = load_pack(os.path.join(EXAMPLES, "sample_pack_math.json"))
+    assert len(tasks) == len(expected)
+    for task, answer in zip(tasks, expected):
+        assert float(task.reference) == pytest.approx(answer), task.id
+        assert task.grader(str(answer)).passed, task.id
+
+
+@pytest.mark.parametrize("filename,task_id,accepted,rejected", [
+    ("sample_pack_years.json", "uk_pm_2022",
+     ["Boris Johnson\nLiz Truss\nRishi Sunak"], ["Boris Johnson and Liz Truss"]),
+    ("sample_pack_years.json", "uk_pm_2024",
+     ["Rishi Sunak\nKeir Starmer"], ["Rishi Sunak"]),
+    ("sample_pack_years.json", "uk_pm_2026", ["Andy Burnham"], ["Keir Starmer"]),
+    ("sample_pack_years.json", "nobel_2026_contribution", ["B"], ["A"]),
+    ("sample_pack_comprehension.json", "read_10_shuttle_days",
+     ["Weekdays only"], ["Monday", "Friday", "Weekends only"]),
+    ("sample_pack_instructions.json", "inst_08_choice_only",
+     ["B"], ["B, because 12 is even"]),
+    ("sample_pack_instructions.json", "inst_19_json_object",
+     ['{"ok":true,"count":3}', '{"count":3,"ok":true}'],
+     ['{"ok":false,"count":3}', '{"ok":true,"count":4}']),
+    ("sample_pack_multilingual.json", "lang_16_japanese_cat_color",
+     ["白", "white"], ["black"]),
+])
+def test_example_pack_grader_cases(filename, task_id, accepted, rejected):
+    tasks = load_pack(os.path.join(EXAMPLES, filename))
+    task = next(task for task in tasks if task.id == task_id)
+    for response in accepted:
+        assert task.grader(response).passed, response
+    for response in rejected:
+        assert not task.grader(response).passed, response
 
 
 def test_yaml_pack():

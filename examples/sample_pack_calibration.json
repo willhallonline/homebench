@@ -1,0 +1,146 @@
+{
+  "name": "answer-calibration",
+  "description": "Twenty evidence-checking questions. For each, classify the claim using only the supplied note: A = supported, B = contradicted, C = not enough information. Reply with only A, B, or C.",
+  "tasks": [
+    {
+      "id": "cal_01",
+      "category": "reasoning",
+      "prompt": "Note: A ferry departs every 30 minutes from 8:00 a.m. through 10:00 a.m., including both endpoints. Claim: There are five departures in that time window. A) Supported B) Contradicted C) Not enough information. Reply with only A, B, or C.",
+      "grader": { "type": "multiple_choice", "value": "A" },
+      "reference": "A"
+    },
+    {
+      "id": "cal_02",
+      "category": "reasoning",
+      "prompt": "Note: The shop closes at 6:00 p.m. and does not reopen that evening. Claim: The shop is open at 7:00 p.m. that evening. A) Supported B) Contradicted C) Not enough information. Reply with only A, B, or C.",
+      "grader": { "type": "multiple_choice", "value": "B" },
+      "reference": "B"
+    },
+    {
+      "id": "cal_03",
+      "category": "reasoning",
+      "prompt": "Note: The shop stocks tea and coffee. Claim: The shop sells only tea. A) Supported B) Contradicted C) Not enough information. Reply with only A, B, or C.",
+      "grader": { "type": "multiple_choice", "value": "C" },
+      "reference": "C"
+    },
+    {
+      "id": "cal_04",
+      "category": "reasoning",
+      "prompt": "Note: Mira packed exactly 3 red folders and 2 blue folders, and no other folders. Claim: Mira packed 5 folders altogether. A) Supported B) Contradicted C) Not enough information. Reply with only A, B, or C.",
+      "grader": { "type": "multiple_choice", "value": "A" },
+      "reference": "A"
+    },
+    {
+      "id": "cal_05",
+      "category": "reasoning",
+      "prompt": "Note: A room has 14 seats, and 9 are occupied. Claim: Exactly 6 seats are empty. A) Supported B) Contradicted C) Not enough information. Reply with only A, B, or C.",
+      "grader": { "type": "multiple_choice", "value": "B" },
+      "reference": "B"
+    },
+    {
+      "id": "cal_06",
+      "category": "reasoning",
+      "prompt": "Note: The club has 12 members. Claim: The club's chair is 40 years old. A) Supported B) Contradicted C) Not enough information. Reply with only A, B, or C.",
+      "grader": { "type": "multiple_choice", "value": "C" },
+      "reference": "C"
+    },
+    {
+      "id": "cal_07",
+      "category": "reasoning",
+      "prompt": "Note: The parcel weighs 2.4 kilograms. Claim: The parcel weighs less than 3 kilograms. A) Supported B) Contradicted C) Not enough information. Reply with only A, B, or C.",
+      "grader": { "type": "multiple_choice", "value": "A" },
+      "reference": "A"
+    },
+    {
+      "id": "cal_08",
+      "category": "reasoning",
+      "prompt": "Note: A train left at 9:10 a.m. and arrived at 10:05 a.m. Claim: The trip took 45 minutes. A) Supported B) Contradicted C) Not enough information. Reply with only A, B, or C.",
+      "grader": { "type": "multiple_choice", "value": "B" },
+      "reference": "B"
+    },
+    {
+      "id": "cal_09",
+      "category": "reasoning",
+      "prompt": "Note: The report says sales increased in April. Claim: Sales increased because of the new advertising campaign. A) Supported B) Contradicted C) Not enough information. Reply with only A, B, or C.",
+      "grader": { "type": "multiple_choice", "value": "C" },
+      "reference": "C"
+    },
+    {
+      "id": "cal_10",
+      "category": "reasoning",
+      "prompt": "Note: Every registered participant received a badge. Noor is a registered participant. Claim: Noor received a badge. A) Supported B) Contradicted C) Not enough information. Reply with only A, B, or C.",
+      "grader": { "type": "multiple_choice", "value": "A" },
+      "reference": "A"
+    },
+    {
+      "id": "cal_11",
+      "category": "reasoning",
+      "prompt": "Note: The garden contains roses, tulips, and lilies. Claim: The garden contains no roses. A) Supported B) Contradicted C) Not enough information. Reply with only A, B, or C.",
+      "grader": { "type": "multiple_choice", "value": "B" },
+      "reference": "B"
+    },
+    {
+      "id": "cal_12",
+      "category": "reasoning",
+      "prompt": "Note: The survey received 80 responses. Claim: Most respondents preferred option A. A) Supported B) Contradicted C) Not enough information. Reply with only A, B, or C.",
+      "grader": { "type": "multiple_choice", "value": "C" },
+      "reference": "C"
+    },
+    {
+      "id": "cal_13",
+      "category": "reasoning",
+      "prompt": "Note: A recipe uses 250 grams of flour per loaf. The baker makes 4 loaves. Claim: The baker uses 1,000 grams of flour. A) Supported B) Contradicted C) Not enough information. Reply with only A, B, or C.",
+      "grader": { "type": "multiple_choice", "value": "A" },
+      "reference": "A"
+    },
+    {
+      "id": "cal_14",
+      "category": "reasoning",
+      "prompt": "Note: The museum is closed on Mondays and open every other day. Claim: The museum is open on Monday. A) Supported B) Contradicted C) Not enough information. Reply with only A, B, or C.",
+      "grader": { "type": "multiple_choice", "value": "B" },
+      "reference": "B"
+    },
+    {
+      "id": "cal_15",
+      "category": "reasoning",
+      "prompt": "Note: An article describes a new battery but gives no price. Claim: The battery costs less than $50. A) Supported B) Contradicted C) Not enough information. Reply with only A, B, or C.",
+      "grader": { "type": "multiple_choice", "value": "C" },
+      "reference": "C"
+    },
+    {
+      "id": "cal_16",
+      "category": "reasoning",
+      "prompt": "Note: The library has five floors numbered 1 through 5 from bottom to top, and the archive is on the top floor. Claim: The archive is on floor 5. A) Supported B) Contradicted C) Not enough information. Reply with only A, B, or C.",
+      "grader": { "type": "multiple_choice", "value": "A" },
+      "reference": "A"
+    },
+    {
+      "id": "cal_17",
+      "category": "reasoning",
+      "prompt": "Note: A box contains 6 glass cups. Two cups are removed. Claim: Four cups remain in the box. A) Supported B) Contradicted C) Not enough information. Reply with only A, B, or C.",
+      "grader": { "type": "multiple_choice", "value": "A" },
+      "reference": "A"
+    },
+    {
+      "id": "cal_18",
+      "category": "reasoning",
+      "prompt": "Note: The north entrance is locked; the south entrance is open. Claim: The north entrance is open. A) Supported B) Contradicted C) Not enough information. Reply with only A, B, or C.",
+      "grader": { "type": "multiple_choice", "value": "B" },
+      "reference": "B"
+    },
+    {
+      "id": "cal_19",
+      "category": "reasoning",
+      "prompt": "Note: A town recorded 18 rainy days in June. Claim: June had more rainy days than May. A) Supported B) Contradicted C) Not enough information. Reply with only A, B, or C.",
+      "grader": { "type": "multiple_choice", "value": "C" },
+      "reference": "C"
+    },
+    {
+      "id": "cal_20",
+      "category": "reasoning",
+      "prompt": "Note: Each ticket costs $8. A group buys 3 tickets and pays exactly the listed price, with no fees or discounts. Claim: The group pays $24. A) Supported B) Contradicted C) Not enough information. Reply with only A, B, or C.",
+      "grader": { "type": "multiple_choice", "value": "A" },
+      "reference": "A"
+    }
+  ]
+}
