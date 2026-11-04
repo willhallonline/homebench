@@ -29,7 +29,8 @@ from .quality import LLMJudge, Task, default_suite
 EV_RUN_START = "run_start"
 EV_MODEL_START = "model_start"
 EV_PHASE = "phase"            # data: model, phase, note
-EV_TASK_DONE = "task_done"    # data: model, task_id, category, score, passed
+EV_TASK_GENERATED = "task_generated"  # data: model, task_id, category, pending_judge
+EV_TASK_DONE = "task_done"    # data: model, task_id, category, score, passed, grading
 EV_MODEL_DONE = "model_done"  # data: report
 EV_RUN_DONE = "run_done"      # data: result
 
@@ -168,7 +169,6 @@ class Runner:
                 report.speed, report.memory = self._measure_speed(model.name)
 
             if cfg.run_quality:
-                _emit(observer, EV_PHASE, model=model.name, phase="quality")
                 report.task_results = self._run_quality(model, observer)
 
             if cfg.unload_between:
@@ -216,20 +216,35 @@ class Runner:
         suite = resolve_suite(self.config, self.judge is not None)
         results: List[TaskResult] = []
         pending_judgement = []
+        _emit(
+            observer, EV_PHASE, model=model.name, phase="quality",
+            total_tasks=len(suite),
+            judge_tasks=sum(task.grader is None for task in suite),
+        )
         for task in suite:
             tr = self._run_task(model, task, defer_judge=self.judge is not None)
             results.append(tr)
-            if tr.detail == "pending judge":
+            pending_judge = tr.detail == "pending judge"
+            _emit(
+                observer, EV_TASK_GENERATED, model=model.name, task_id=task.id,
+                category=task.category, pending_judge=pending_judge,
+                grading="auto" if task.grader is not None else "judge",
+            )
+            if pending_judge:
                 pending_judgement.append((task, tr))
                 continue
             _emit(
                 observer, EV_TASK_DONE, model=model.name, task_id=task.id,
                 category=task.category, score=tr.score, passed=tr.passed,
+                grading="auto" if task.grader is not None else "judge",
+                generation_error=tr.detail.startswith("generation error:"),
+                detail=tr.detail,
             )
 
         if pending_judgement:
             _emit(
                 observer, EV_PHASE, model=model.name, phase="judge",
+                total_tasks=len(pending_judgement),
                 note=f"scoring {len(pending_judgement)} open-ended tasks",
             )
             for task, tr in pending_judgement:
@@ -240,6 +255,7 @@ class Runner:
                 _emit(
                     observer, EV_TASK_DONE, model=model.name, task_id=task.id,
                     category=task.category, score=tr.score, passed=tr.passed,
+                    grading="judge", detail=tr.detail,
                 )
         return results
 
