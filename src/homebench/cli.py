@@ -73,12 +73,12 @@ def build_parser() -> argparse.ArgumentParser:
                         help="write raw JSON results to FILE")
         sp.add_argument("--html", dest="html_out", default=None, metavar="FILE",
                         help="write a self-contained shareable HTML report to FILE")
-        sp.add_argument("--tasks", action="append", default=None, metavar="PACK",
+        sp.add_argument("--tasks", action="extend", nargs="+", default=None, metavar="PACK",
                         help="use this task pack instead of the built-in suite "
-                             "(JSON/YAML; repeatable)")
-        sp.add_argument("--add-tasks", dest="add_tasks", action="append",
+                     "(JSON/YAML; accepts multiple packs)")
+        sp.add_argument("--add-tasks", dest="add_tasks", action="extend", nargs="+",
                         default=None, metavar="PACK",
-                        help="append this task pack to the current suite (repeatable)")
+                help="append task packs to the current suite (accepts multiple packs)")
         sp.add_argument("--label", default=None,
                         help="label to tag this run in history (for diffing)")
         sp.add_argument("--no-save", action="store_true",
