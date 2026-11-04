@@ -15,6 +15,7 @@ from rich.table import Table
 from rich.text import Text
 
 from .models import BenchmarkResult, ModelInfo, ModelReport
+from .progress import QualityProgress
 from .report import (
     fmt_quality,
     fmt_tps,
@@ -27,7 +28,6 @@ from .runner import (
     EV_MODEL_DONE,
     EV_MODEL_START,
     EV_PHASE,
-    EV_TASK_DONE,
     Runner,
     resolve_suite,
 )
@@ -38,12 +38,14 @@ class PlainReporter:
         self.order = [m.name for m in models]
         self.total_tasks = total_tasks
         self.status: Dict[str, str] = {n: "queued" for n in self.order}
-        self.progress: Dict[str, int] = {n: 0 for n in self.order}
+        self.quality = {n: QualityProgress(total_tasks) for n in self.order}
         self.reports: Dict[str, ModelReport] = {}
         self.current: Optional[str] = None
 
     # observer callback -------------------------------------------------
     def __call__(self, event: str, **data) -> None:
+        if "model" in data:
+            self.quality[data["model"]].update(event, data)
         if event == EV_MODEL_START:
             self.current = data["model"]
             self.status[data["model"]] = "starting"
@@ -53,8 +55,6 @@ class PlainReporter:
                 self.status[data["model"]] = "error"
             else:
                 self.status[data["model"]] = phase
-        elif event == EV_TASK_DONE:
-            self.progress[data["model"]] = self.progress.get(data["model"], 0) + 1
         elif event == EV_MODEL_DONE:
             report = data["report"]
             self.reports[report.model.name] = report
@@ -63,9 +63,8 @@ class PlainReporter:
     # rendering ---------------------------------------------------------
     def _status_text(self, name: str) -> Text:
         s = self.status.get(name, "queued")
-        if s == "quality":
-            done = self.progress.get(name, 0)
-            return Text(f"quality {done}/{self.total_tasks}", style="yellow")
+        if s in ("quality", "judge"):
+            return Text(self.quality[name].label(s), style="yellow")
         colors = {
             "done": "green", "error": "red", "queued": "dim",
             "warmup": "cyan", "speed": "cyan", "starting": "cyan",
@@ -101,6 +100,22 @@ class PlainReporter:
             table.add_row(n, self._status_text(n), "–", "–", "–", "–", "–", "–")
 
         header = Text("homebench — benchmarking local models", style="bold magenta")
+        if self.current is not None and self.quality[self.current].tasks:
+            tasks = Table(
+                title=Text(f"Quality tasks for {self.current}"),
+                header_style="bold cyan",
+            )
+            for column in ("Task", "Category", "Grading", "Status", "Score", "Detail"):
+                tasks.add_column(column)
+            for task in self.quality[self.current].tasks.values():
+                style = "yellow" if task.score is None else (
+                    "green" if task.status == "Pass" else "red"
+                )
+                tasks.add_row(
+                    Text(task.task_id), Text(task.category), task.grading_label,
+                    Text(task.status, style=style), task.score_label, Text(task.detail),
+                )
+            return Group(header, table, tasks)
         return Group(header, table)
 
 

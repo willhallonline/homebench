@@ -99,6 +99,17 @@ homebench fit                    # which popular models fit YOUR hardware?
 
 Run `homebench --help` for the full flag list.
 
+When open-ended tasks are included (for example, `--full --judge MODEL`), each
+model's quality run has two visible phases in both the full-screen and plain
+live views: **1/2 Generate and auto-grade**, then
+**2/2 Judge open-ended responses**. Generation progress counts every response
+(including cached auto-graded answers); judging progress counts only the
+open-ended responses being scored. The task table labels **Auto-graded** tasks
+separately from **LLM judge** tasks. Open-ended responses show **Awaiting judge**
+with no score until the same row updates to its judged result. Generation errors
+are shown explicitly and are not sent to the judge. The final leaderboard still
+combines both kinds of scores once the model's run is complete.
+
 ### Example output
 
 A real quick-suite run on an Apple M1 (16 GB), via Ollama:
