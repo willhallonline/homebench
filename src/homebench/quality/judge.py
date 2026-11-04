@@ -49,9 +49,7 @@ class LLMJudge:
             return Grade(0.0, False, f"judge error: {exc}")
 
         text = result.text
-        m = re.search(r"SCORE\s*[:=]?\s*([1-5])", text, re.IGNORECASE)
-        if not m:
-            m = re.search(r"\b([1-5])\b", text)
+        m = re.search(r"^\s*SCORE\s*:\s*([1-5])\b", text, re.IGNORECASE | re.MULTILINE)
         if not m:
             return Grade(0.0, False, f"judge gave no score: {text[:80]!r}")
         raw = int(m.group(1))
