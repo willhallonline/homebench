@@ -48,7 +48,8 @@ def test_runner_honors_custom_suite():
 
 
 def test_pack_grader_uses_answer_after_think_marker(tmp_path):
-    path = tmp_path / "pack.json"
+    path = tmp_path / "sample_tasks" / "pack.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps({
         "tasks": [{
             "id": "answer",
@@ -80,7 +81,8 @@ def test_pack_grader_uses_answer_after_think_marker(tmp_path):
 
 
 def test_pack_judge_uses_answer_after_think_marker(tmp_path):
-    path = tmp_path / "pack.json"
+    path = tmp_path / "sample_tasks" / "pack.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps({
         "tasks": [{
             "id": "summary",

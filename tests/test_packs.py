@@ -29,7 +29,7 @@ def test_load_json_pack(tmp_path):
     })
     tasks = load_pack(path)
     assert [t.id for t in tasks] == ["a", "b"]
-    assert all(t.strip_think for t in tasks)
+    assert all(not t.strip_think for t in tasks)
     assert tasks[0].grader("the answer is 4").passed
     assert tasks[1].grader("Paris").passed
 

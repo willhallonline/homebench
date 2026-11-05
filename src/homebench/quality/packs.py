@@ -82,7 +82,18 @@ def _grader_from_spec(spec: Optional[Dict[str, Any]], where: str) -> Optional[Gr
     raise PackError(f"{where}: unknown grader type {gtype!r}")
 
 
-def _task_from_spec(spec: Dict[str, Any], where: str) -> Task:
+def _should_strip_think(path: str) -> bool:
+    norm = os.path.normpath(path)
+    basename = os.path.basename(norm).lower()
+    folder = os.path.basename(os.path.dirname(norm)).lower()
+    return (
+        "sample" in basename
+        or "example" in basename
+        or folder in {"sample_tasks", "sample-tasks", "examples", "example"}
+    )
+
+
+def _task_from_spec(spec: Dict[str, Any], where: str, *, strip_think: bool = False) -> Task:
     if not isinstance(spec, dict):
         raise PackError(f"{where}: each task must be a mapping")
     if "id" not in spec:
@@ -101,7 +112,7 @@ def _task_from_spec(spec: Dict[str, Any], where: str) -> Task:
         grader=grader,
         max_tokens=int(spec.get("max_tokens", 256)),
         reference=str(spec.get("reference", "")),
-        strip_think=True,
+        strip_think=strip_think,
     )
 
 
@@ -156,8 +167,9 @@ def load_pack(path: str) -> List[Task]:
 
     tasks: List[Task] = []
     seen = set()
+    strip_think = _should_strip_think(path)
     for i, spec in enumerate(raw_tasks):
-        task = _task_from_spec(spec, f"{path}[task {i}]")
+        task = _task_from_spec(spec, f"{path}[task {i}]", strip_think=strip_think)
         if task.id in seen:
             raise PackError(f"{path}: duplicate task id {task.id!r}")
         seen.add(task.id)
