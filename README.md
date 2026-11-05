@@ -145,7 +145,7 @@ Auto-detection tries Ollama → LM Studio → llama.cpp → vLLM (the `mlx` and 
 
 The suite is small on purpose — enough tasks across categories to *separate* models, few enough that every model runs in a couple of minutes on a laptop. Each task is graded deterministically (exact numeric match, multiple-choice letter, substring, valid-JSON, regex). Temperature is 0 and a fixed seed is used for reproducibility. See `homebench tasks` for the list.
 
-The optional `--judge MODEL` flag turns on an LLM-as-judge (any local model) that scores open-ended tasks 1–5 against a reference answer. It's a signal, not an oracle.
+The optional `--judge MODEL` flag turns on an LLM-as-judge (any local model) that scores open-ended tasks 1–5 against a reference answer. Ollama judge calls disable separate thinking output when supported so the score can be returned directly. It's a signal, not an oracle.
 
 ### Fast by default
 
@@ -181,6 +181,8 @@ tasks:
 ```
 
 Grader `type` values: `exact_number` (`value`, `tol`), `multiple_choice` (`value`), `contains_any` (`values`), `regex` (`pattern`, `ignorecase`), `valid_json` (`keys`), `valid_json_array` (`length`). Omit `grader` for a judge-only task. Runnable examples live in [`examples/`](examples/); preview any pack with `homebench tasks --tasks mypack.yaml`.
+
+For tasks loaded from a pack, if a response contains `</think>`, only the text after its last occurrence is graded or sent to the judge. If the marker is absent, the full response is used; reports always retain the full response.
 
 ## History & diffing
 
