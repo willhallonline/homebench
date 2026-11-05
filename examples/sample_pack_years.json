@@ -41,7 +41,7 @@
       "id": "nobel_2022_contribution",
       "category": "factual",
       "prompt": "What experimental subject did the 2022 Nobel Prize in Physics recognize? Answer with a short phrase.",
-      "grader": { "type": "contains_any", "values": ["entangled photons", "quantum information"] },
+      "grader": { "type": "contains_any", "values": ["entangled photons", "quantum information", "quantum entanglement"] },
       "reference": "Experiments with entangled photons and pioneering quantum information science"
     },
     {

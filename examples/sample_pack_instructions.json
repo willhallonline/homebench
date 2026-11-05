@@ -6,140 +6,141 @@
       "id": "inst_01_exact_word",
       "category": "format",
       "prompt": "Reply with exactly the uppercase word READY and nothing else.",
-      "grader": { "type": "regex", "pattern": "^READY$", "ignorecase": false },
+      "grader": { "type": "regex", "pattern": "(?s)(?:^|</think>\\s*)READY$", "ignorecase": false },
       "reference": "READY"
     },
     {
       "id": "inst_02_csv_order",
       "category": "format",
       "prompt": "Output only these three numbers in ascending order, separated by commas with no spaces: 8, 3, 5.",
-      "grader": { "type": "regex", "pattern": "^3,5,8$", "ignorecase": false },
+      "grader": { "type": "regex", "pattern": "(?s)(?:^|</think>\\s*)3,5,8$", "ignorecase": false },
       "reference": "3,5,8"
     },
     {
       "id": "inst_03_pipe_format",
       "category": "format",
       "prompt": "Output only the words north and west in that order, separated by one vertical bar and no spaces.",
-      "grader": { "type": "regex", "pattern": "^north\\|west$", "ignorecase": false },
+      "grader": { "type": "regex", "pattern": "(?s)(?:^|</think>\\s*)north\\|west$", "ignorecase": false },
       "reference": "north|west"
     },
     {
       "id": "inst_04_lowercase",
       "category": "format",
       "prompt": "Write the color BLUE using lowercase letters only. Output nothing else.",
-      "grader": { "type": "regex", "pattern": "^blue$", "ignorecase": false },
+      "grader": { "type": "regex", "pattern": "(?s)(?:^|</think>\\s*)blue$", "ignorecase": false },
       "reference": "blue"
     },
     {
       "id": "inst_05_yes_uppercase",
       "category": "format",
       "prompt": "Is 17 a prime number? Reply with exactly YES or NO in uppercase, with no explanation.",
-      "grader": { "type": "regex", "pattern": "^YES$", "ignorecase": false },
+      "grader": { "type": "regex", "pattern": "(?s)(?:^|</think>\\s*)YES$", "ignorecase": false },
       "reference": "YES"
     },
     {
       "id": "inst_06_json_array",
       "category": "format",
       "prompt": "Output only a JSON array containing the strings oak and elm, in that order.",
-      "grader": { "type": "regex", "pattern": "^\\s*\\[\\s*\"oak\"\\s*,\\s*\"elm\"\\s*\\]\\s*$", "ignorecase": false },
+      "grader": { "type": "regex", "pattern": "(?s)(?:^|</think>\\s*)\\[\\s*\"oak\"\\s*,\\s*\"elm\"\\s*\\]\\s*$", "ignorecase": false },
       "reference": "[\"oak\", \"elm\"]"
     },
     {
       "id": "inst_07_one_word",
       "category": "format",
       "prompt": "Name the color made by mixing blue and yellow paint. Reply with one lowercase word only.",
-      "grader": { "type": "regex", "pattern": "^green$", "ignorecase": false },
+      "grader": { "type": "regex", "pattern": "(?s)(?:^|</think>\\s*)green$", "ignorecase": false },
       "reference": "green"
     },
     {
       "id": "inst_08_choice_only",
       "category": "format",
       "prompt": "Which number is even? A) 7 B) 12 C) 15. Reply with only the letter of the correct choice.",
-      "grader": { "type": "regex", "pattern": "^B$", "ignorecase": false },
+      "grader": { "type": "regex", "pattern": "(?s)(?:^|</think>\\s*)B$", "ignorecase": false },
       "reference": "B"
     },
     {
       "id": "inst_09_identifier",
       "category": "format",
       "prompt": "Return the identifier exactly as written, with no surrounding text: ID-047.",
-      "grader": { "type": "regex", "pattern": "^ID-047$", "ignorecase": false },
+      "grader": { "type": "regex", "pattern": "(?s)(?:^|</think>\\s*)ID-047$", "ignorecase": false },
       "reference": "ID-047"
     },
     {
       "id": "inst_10_three_lines",
       "category": "format",
       "prompt": "Output these words in lowercase, one per line, in this order: RED, GREEN, BLUE. Do not add anything else.",
-      "grader": { "type": "regex", "pattern": "^red\\ngreen\\nblue$", "ignorecase": false },
+      "grader": { "type": "regex", "pattern": "(?s)(?:^|</think>\\s*)red\\ngreen\\nblue$", "ignorecase": false },
       "reference": "red\ngreen\nblue"
     },
     {
       "id": "inst_11_alternating_code",
       "category": "format",
       "prompt": "Starting with A, alternate a letter and its following number to encode A1 B2 C3. Output the six characters only, with no spaces.",
-      "grader": { "type": "regex", "pattern": "^A1B2C3$", "ignorecase": false },
+      "grader": { "type": "regex", "pattern": "(?s)(?:^|</think>\\s*)A1B2C3$", "ignorecase": false },
+      "max_tokens": 512,
       "reference": "A1B2C3"
     },
     {
       "id": "inst_12_labeled_values",
       "category": "format",
       "prompt": "Compute 1 + 1 and 2 + 2. Output exactly `first:<answer to first>;second:<answer to second>` with no spaces.",
-      "grader": { "type": "regex", "pattern": "^first:2;second:4$", "ignorecase": false },
+      "grader": { "type": "regex", "pattern": "(?s)(?:^|</think>\\s*)first:2;second:4$", "ignorecase": false },
       "reference": "first:2;second:4"
     },
     {
       "id": "inst_13_uncertainty_phrase",
       "category": "format",
       "prompt": "The note says a package was shipped, but gives no delivery date. State that the date is unknown using exactly the phrase `not enough information` in lowercase.",
-      "grader": { "type": "regex", "pattern": "^not enough information$", "ignorecase": false },
+      "grader": { "type": "regex", "pattern": "(?s)(?:^|</think>\\s*)not enough information$", "ignorecase": false },
       "reference": "not enough information"
     },
     {
       "id": "inst_14_numeric_array",
       "category": "format",
       "prompt": "Output only a JSON array of the even numbers between 1 and 6 inclusive, in ascending order.",
-      "grader": { "type": "regex", "pattern": "^\\s*\\[\\s*2\\s*,\\s*4\\s*,\\s*6\\s*\\]\\s*$", "ignorecase": false },
+      "grader": { "type": "regex", "pattern": "(?s)(?:^|</think>\\s*)\\[\\s*2\\s*,\\s*4\\s*,\\s*6\\s*\\]\\s*$", "ignorecase": false },
       "reference": "[2, 4, 6]"
     },
     {
       "id": "inst_15_exact_phrase",
       "category": "format",
       "prompt": "Reply with exactly these five words, in this order and lowercase: Read the note, then answer. Do not include punctuation.",
-      "grader": { "type": "regex", "pattern": "^read the note then answer$", "ignorecase": false },
+      "grader": { "type": "regex", "pattern": "(?s)(?:^|</think>\\s*)read the note then answer$", "ignorecase": false },
       "reference": "read the note then answer"
     },
     {
       "id": "inst_16_reverse_order",
       "category": "format",
       "prompt": "Reverse the order of the labels and preserve their values: alpha=1, beta=2, gamma=3. Output only `gamma=3;beta=2;alpha=1`.",
-      "grader": { "type": "regex", "pattern": "^gamma=3;beta=2;alpha=1$", "ignorecase": false },
+      "grader": { "type": "regex", "pattern": "(?s)(?:^|</think>\\s*)gamma=3;beta=2;alpha=1$", "ignorecase": false },
       "reference": "gamma=3;beta=2;alpha=1"
     },
     {
       "id": "inst_17_no_explanation",
       "category": "format",
       "prompt": "What is the capital of Italy? Output only the city name, with initial capitalization.",
-      "grader": { "type": "regex", "pattern": "^Rome$", "ignorecase": false },
+      "grader": { "type": "regex", "pattern": "(?s)(?:^|</think>\\s*)Rome$", "ignorecase": false },
       "reference": "Rome"
     },
     {
       "id": "inst_18_sentence_limit",
       "category": "format",
       "prompt": "Describe a calm sea using exactly this one short sentence and no extra text: The sea is calm.",
-      "grader": { "type": "regex", "pattern": "^The sea is calm\\.$", "ignorecase": false },
+      "grader": { "type": "regex", "pattern": "(?s)(?:^|</think>\\s*)The sea is calm\\.$", "ignorecase": false },
       "reference": "The sea is calm."
     },
     {
       "id": "inst_19_json_object",
       "category": "format",
       "prompt": "Output only a JSON object with the boolean key `ok` set to true and numeric key `count` set to 3.",
-      "grader": { "type": "regex", "pattern": "^\\s*\\{\\s*(?:\"ok\"\\s*:\\s*true\\s*,\\s*\"count\"\\s*:\\s*3|\"count\"\\s*:\\s*3\\s*,\\s*\"ok\"\\s*:\\s*true)\\s*\\}\\s*$", "ignorecase": false },
+      "grader": { "type": "regex", "pattern": "(?s)(?:^|</think>\\s*)\\{\\s*(?:\"ok\"\\s*:\\s*true\\s*,\\s*\"count\"\\s*:\\s*3|\"count\"\\s*:\\s*3\\s*,\\s*\"ok\"\\s*:\\s*true)\\s*\\}\\s*$", "ignorecase": false },
       "reference": "{\"ok\": true, \"count\": 3}"
     },
     {
       "id": "inst_20_done",
       "category": "format",
       "prompt": "Complete the instruction by replying with exactly DONE in uppercase and no other text.",
-      "grader": { "type": "regex", "pattern": "^DONE$", "ignorecase": false },
+      "grader": { "type": "regex", "pattern": "(?s)(?:^|</think>\\s*)DONE$", "ignorecase": false },
       "reference": "DONE"
     }
   ]
