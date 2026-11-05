@@ -42,6 +42,12 @@ def _emit(observer: Observer, event: str, **data) -> None:
         observer(event, **data)
 
 
+def _response_for_grading(task: Task, response: str) -> str:
+    if task.strip_think:
+        return response.rsplit("</think>", 1)[-1]
+    return response
+
+
 DEFAULT_SPEED_PROMPT = (
     "Write three detailed paragraphs explaining how a computer's CPU executes "
     "a program, from source code to running instructions."
@@ -248,7 +254,10 @@ class Runner:
                 note=f"scoring {len(pending_judgement)} open-ended tasks",
             )
             for task, tr in pending_judgement:
-                grade = self.judge.score(task.prompt, tr.response, task.reference)
+                grade = self.judge.score(
+                    task.prompt, _response_for_grading(task, tr.response),
+                    task.reference,
+                )
                 tr.score = grade.score
                 tr.passed = grade.passed
                 tr.detail = grade.detail
@@ -303,10 +312,11 @@ class Runner:
                                      task.max_tokens, cfg.temperature, cfg.seed)
                 self.cache.set(key, response, out_tokens)
 
+        grade_response = _response_for_grading(task, response)
         if task.grader is not None:
-            grade = task.grader(response)
+            grade = task.grader(grade_response)
         elif self.judge is not None and not defer_judge:
-            grade = self.judge.score(task.prompt, response, task.reference)
+            grade = self.judge.score(task.prompt, grade_response, task.reference)
         elif self.judge is not None:
             grade = None
         else:

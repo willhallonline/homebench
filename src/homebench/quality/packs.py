@@ -101,6 +101,7 @@ def _task_from_spec(spec: Dict[str, Any], where: str) -> Task:
         grader=grader,
         max_tokens=int(spec.get("max_tokens", 256)),
         reference=str(spec.get("reference", "")),
+        strip_think=True,
     )
 
 
