@@ -74,6 +74,7 @@ homebench --provider lmstudio    # use LM Studio instead of auto-detect
 homebench --provider llamacpp    # llama.cpp server (llama-server)
 homebench --provider vllm        # vLLM
 homebench --provider openai --host http://localhost:5000   # any OpenAI-compatible server
+homebench copilot -m claude-sonnet-5.5                   # benchmark Copilot CLI
 homebench --refresh-cache        # recompute instead of reusing cached responses
 homebench --no-quality           # speed + memory only (fast)
 homebench --no-speed             # quality only
@@ -98,6 +99,37 @@ homebench fit                    # which popular models fit YOUR hardware?
 ```
 
 Run `homebench --help` for the full flag list.
+
+### Benchmark GitHub Copilot CLI
+
+Install and sign in to [GitHub Copilot CLI](https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/install-copilot-cli).
+If you are running Homebench from a source checkout, install it in a virtual
+environment:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e .
+copilot --version
+```
+
+Then run the quality suite through Copilot:
+
+```bash
+homebench copilot -m <model-id>
+```
+
+Use the exact model ID available in Copilot CLI. Pass comma-separated IDs to
+compare models, `--full` for the full suite, or `--tasks pack.json` for a
+custom task pack. `COPILOT_MODEL` can supply the model instead of `-m`.
+Activate `.venv` in each new terminal before running `homebench`.
+
+This command starts a temporary OpenAI-compatible bridge on localhost, runs
+the benchmark, and stops the bridge. Requests invoke `copilot -p` in a fresh
+temporary directory with no tools enabled; no repository files are exposed to the CLI. This
+evaluates Copilot CLI responses, not the VS Code Copilot experience. Speed,
+memory, sampling controls, and token usage are not comparable for this
+provider, so the command runs quality-only by default.
 
 When open-ended tasks are included (for example, `--full --judge MODEL`), each
 model's quality run has two visible phases in both the full-screen and plain
