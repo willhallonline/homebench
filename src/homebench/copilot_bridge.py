@@ -53,6 +53,8 @@ def _assistant_text(output: str) -> str:
         if not isinstance(event, dict):
             continue
         event_type = str(event.get("type", "")).lower()
+        if "assistant" in event_type and "reasoning" in event_type and "delta" in event_type:
+            continue
         if "assistant" in event_type and "delta" in event_type:
             text = _event_text(event.get("data", event))
             if text:
@@ -61,12 +63,20 @@ def _assistant_text(output: str) -> str:
             text = _event_text(event.get("data", event))
             if text:
                 messages.append(text)
+        elif "assistant" in event_type and "final" in event_type:
+            text = _event_text(event.get("data", event))
+            if text:
+                messages.append(text)
         elif event_type == "result":
             text = _event_text(event.get("data", event))
             if text:
                 messages.append(text)
 
-    return "".join(deltas) if deltas else (messages[-1] if messages else "")
+    if deltas:
+        return "".join(deltas)
+    if messages:
+        return messages[-1]
+    return ""
 
 
 def _prompt_from_messages(messages) -> str:
@@ -202,6 +212,7 @@ class CopilotBridge:
         self.timeout = timeout
         self._server: Optional[CopilotBridge._Server] = None
         self._thread: Optional[threading.Thread] = None
+        self._cwd: Optional[str] = None
 
     @property
     def url(self) -> str:
@@ -215,6 +226,8 @@ class CopilotBridge:
         self._server.bridge = self
         self._thread = threading.Thread(target=self._server.serve_forever, daemon=True)
         self._thread.start()
+        self._cwd = os.path.join(os.path.expanduser("~"), ".homebench", "copilot")
+        os.makedirs(self._cwd, exist_ok=True)
         return self
 
     def __exit__(self, _exc_type, _exc, _traceback) -> None:
@@ -225,23 +238,32 @@ class CopilotBridge:
             self._thread.join(timeout=2.0)
         self._server = None
         self._thread = None
+        self._cwd = None
 
     def generate(self, model: str, prompt: str) -> str:
+        if self._cwd is None:
+            raise RuntimeError("Copilot bridge is not running")
         command = [
             self.executable,
+            "-C",
+            self._cwd,
             "-p",
             prompt,
+            "--session-id",
+            str(uuid.uuid4()),
             f"--model={model}",
             "--output-format=json",
             "--no-ask-user",
             "--available-tools=",
+            "--disable-builtin-mcps",
         ]
         env = os.environ.copy()
         env["COPILOT_AUTO_UPDATE"] = "false"
-        with tempfile.TemporaryDirectory(prefix="homebench-copilot-") as cwd:
+        with tempfile.TemporaryDirectory(prefix="homebench-copilot-home-") as copilot_home:
+            env["COPILOT_HOME"] = copilot_home
             result = subprocess.run(
                 command,
-                cwd=cwd,
+                cwd=self._cwd,
                 env=env,
                 capture_output=True,
                 text=True,
