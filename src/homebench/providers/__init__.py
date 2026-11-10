@@ -10,6 +10,7 @@ from .lmstudio import LMStudioProvider
 from .mlx import MLXProvider
 from .ollama import OllamaProvider
 from .openai_compat import OpenAICompatibleProvider
+from .hermes_agent import HermesAgentProvider
 from .vllm import VLLMProvider
 
 # All providers selectable via --provider / get_provider().
@@ -20,6 +21,7 @@ _PROVIDERS: Dict[str, Type[Provider]] = {
     VLLMProvider.name: VLLMProvider,
     MLXProvider.name: MLXProvider,
     OpenAICompatibleProvider.name: OpenAICompatibleProvider,
+    HermesAgentProvider.name: HermesAgentProvider,
 }
 
 # Order tried during auto-detection (first reachable one wins). The generic
@@ -73,6 +75,7 @@ __all__ = [
     "VLLMProvider",
     "MLXProvider",
     "OpenAICompatibleProvider",
+    "HermesAgentProvider",
     "available_providers",
     "get_provider",
     "detect_provider",
