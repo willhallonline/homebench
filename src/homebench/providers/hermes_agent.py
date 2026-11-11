@@ -17,7 +17,10 @@ def _final_response(output: str) -> str:
     if marker in output:
         response = output.split(marker, 1)[1]
         response = response.split("👋 Agent execution completed!", 1)[0]
-        response = response.strip()
+        response = "\n".join(
+            line for line in response.strip().splitlines()
+            if set(line.strip()) != {"-"}
+        ).strip()
         if response:
             return response
 

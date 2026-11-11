@@ -12,6 +12,7 @@ def test_final_response_extracts_summary():
     output = """\
 🤖 Assistant: intermediate
 🎯 FINAL RESPONSE:
+------------------------------
 The final answer.
 
 👋 Agent execution completed!
