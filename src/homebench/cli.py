@@ -94,9 +94,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     hermes_p = sub.add_parser(
         "hermes",
-        help="benchmark Hermes Agent responses (quality only)",
-        description="Run the quality suite through the local Hermes Agent CLI. "
-                    "Requires the `hermes-agent` command to be installed.",
+        help="benchmark Hermes responses (quality only)",
+        description="Run the quality suite through the full Hermes CLI. "
+                    "Requires the `hermes` command to be installed.",
     )
     add_run_options(hermes_p)
     hermes_p.set_defaults(no_speed=True, no_warmup=True, no_rss=True)
@@ -736,8 +736,8 @@ def cmd_hermes(args, console: Console) -> int:
 
     from .providers.hermes_agent import (
         HermesAgentProvider,
-        check_hermes_agent,
-        find_hermes_agent,
+        check_hermes,
+        find_hermes,
     )
 
     model_names = [
@@ -751,23 +751,23 @@ def cmd_hermes(args, console: Console) -> int:
             "or set [bold]HERMES_MODEL[/bold]"
         )
         return 2
-    executable = find_hermes_agent()
+    executable = find_hermes()
     if not executable:
         console.print(
-            "[red]error:[/red] Hermes Agent was not found. "
-            "Install it and ensure [bold]hermes-agent[/bold] is on PATH."
+            "[red]error:[/red] Hermes CLI was not found. "
+            "Install it and ensure [bold]hermes[/bold] is on PATH."
         )
         return 1
 
     try:
-        version = check_hermes_agent(executable)
+        version = check_hermes(executable)
         if version:
-            console.print(f"[dim]Hermes Agent {version}[/dim]")
+            console.print(f"[dim]Hermes {version}[/dim]")
         provider = HermesAgentProvider(
             models=model_names, executable=executable, timeout=args.timeout
         )
         console.print(
-            "[dim]Using Hermes Agent in one-shot query mode; "
+            "[dim]Using the Hermes CLI in one-shot mode; "
             "quality only (no comparable speed or memory metrics).[/dim]\n"
         )
         return cmd_run(args, console, provider_override=provider)

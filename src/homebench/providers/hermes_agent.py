@@ -1,4 +1,4 @@
-"""Homebench provider backed by the local Hermes Agent CLI."""
+"""Homebench provider backed by the local Hermes CLI."""
 
 from __future__ import annotations
 
@@ -13,16 +13,19 @@ from .base import GenerationResult, Provider, ProviderError, TokenCallback
 
 
 def _final_response(output: str) -> str:
+    clean_output = output.strip()
+    if "🎯 FINAL RESPONSE:" not in clean_output:
+        return clean_output
+
     marker = "🎯 FINAL RESPONSE:"
-    if marker in output:
-        response = output.split(marker, 1)[1]
-        response = response.split("👋 Agent execution completed!", 1)[0]
-        response = "\n".join(
-            line for line in response.strip().splitlines()
-            if set(line.strip()) != {"-"}
-        ).strip()
-        if response:
-            return response
+    response = clean_output.split(marker, 1)[1]
+    response = response.split("👋 Agent execution completed!", 1)[0]
+    response = "\n".join(
+        line for line in response.strip().splitlines()
+        if set(line.strip()) != {"-"}
+    ).strip()
+    if response:
+        return response
 
     for line in reversed(output.splitlines()):
         if line.startswith("🤖 Assistant:"):
@@ -33,14 +36,14 @@ def _final_response(output: str) -> str:
 
 
 class HermesAgentProvider(Provider):
-    """Run one-shot Hermes Agent queries for quality evaluation."""
+    """Run one-shot Hermes queries for quality evaluation."""
 
     name = "hermes-agent"
 
     def __init__(
         self,
         models: Optional[List[str]] = None,
-        executable: str = "hermes-agent",
+        executable: str = "hermes",
         timeout: float = 300.0,
     ):
         self.models = list(dict.fromkeys(model.strip() for model in (models or []) if model.strip()))
@@ -82,14 +85,12 @@ class HermesAgentProvider(Provider):
     ) -> GenerationResult:
         command = [
             self.executable,
-            "--query",
+            "-z",
             prompt,
-            "--model",
+            "-m",
             model,
-            "--max-turns",
-            "1",
-            "--disabled-toolsets",
-            "all",
+            "--provider",
+            "copilot",
         ]
         start = time.perf_counter()
         try:
@@ -104,21 +105,29 @@ class HermesAgentProvider(Provider):
                 env={**os.environ, "PYTHONUNBUFFERED": "1"},
             )
         except subprocess.TimeoutExpired as exc:
-            raise ProviderError(f"Hermes Agent timed out for {model!r}") from exc
+            raise ProviderError(f"Hermes timed out for {model!r}") from exc
         except OSError as exc:
-            raise ProviderError(f"Could not start Hermes Agent: {exc}") from exc
+            raise ProviderError(f"Could not start Hermes: {exc}") from exc
 
         if result.returncode:
             detail = (result.stderr or result.stdout).strip()
             raise ProviderError(
-                f"Hermes Agent failed for {model!r}: "
+                f"Hermes failed for {model!r}: "
                 f"{detail[:2000] or f'exited with status {result.returncode}'}"
             )
         content = _final_response(result.stdout)
         if not content:
             raise ProviderError(
-                "Hermes Agent returned no final response; "
-                "check that --query output is supported"
+                "Hermes returned no final response; check that -z output is supported"
+            )
+        if (
+            "The requested model is not supported" in content
+            or "is not accessible via the /chat/completions endpoint" in content
+            or "rejected this request as malformed" in content
+            or "Your request was not processed" in content
+        ):
+            raise ProviderError(
+                f"Hermes could not access model {model!r}: {content}"
             )
         if on_token is not None:
             on_token(content)
@@ -127,13 +136,13 @@ class HermesAgentProvider(Provider):
         return GenerationResult(text=content, speed=speed)
 
 
-def find_hermes_agent() -> Optional[str]:
-    """Return the Hermes Agent executable path, if installed."""
-    return shutil.which("hermes-agent")
+def find_hermes() -> Optional[str]:
+    """Return the full Hermes CLI executable path, if installed."""
+    return shutil.which("hermes")
 
 
-def check_hermes_agent(executable: str) -> str:
-    """Verify Hermes Agent starts and return its version output."""
+def check_hermes(executable: str) -> str:
+    """Verify the full Hermes CLI starts and return its version output."""
     try:
         result = subprocess.run(
             [executable, "--version"],
@@ -145,10 +154,15 @@ def check_hermes_agent(executable: str) -> str:
             check=False,
         )
     except (OSError, subprocess.TimeoutExpired) as exc:
-        raise ProviderError(f"could not start Hermes Agent: {exc}") from exc
+        raise ProviderError(f"could not start Hermes: {exc}") from exc
     version = (result.stdout or result.stderr).strip()
     if result.returncode:
         raise ProviderError(
-            version[:2000] or f"Hermes Agent exited with status {result.returncode}"
+            version[:2000] or f"Hermes exited with status {result.returncode}"
         )
     return version
+
+
+# Backward-compatible Python names for callers importing the provider helpers.
+find_hermes_agent = find_hermes
+check_hermes_agent = check_hermes
