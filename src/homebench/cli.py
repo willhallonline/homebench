@@ -101,6 +101,15 @@ def build_parser() -> argparse.ArgumentParser:
     add_run_options(copilot_p, include_provider=False)
     copilot_p.set_defaults(no_speed=True, no_warmup=True, no_rss=True)
 
+    hermes_p = sub.add_parser(
+        "hermes",
+        help="benchmark Hermes Agent responses (quality only)",
+        description="Run the quality suite through the local Hermes Agent CLI. "
+                    "Requires the `hermes-agent` command to be installed.",
+    )
+    add_run_options(hermes_p)
+    hermes_p.set_defaults(no_speed=True, no_warmup=True, no_rss=True)
+
     list_p = sub.add_parser("list", help="list discovered models and exit")
     list_p.add_argument("--provider", default=None)
     list_p.add_argument("--host", default=None)
@@ -189,8 +198,8 @@ def build_parser() -> argparse.ArgumentParser:
     return p
 
 
-_COMMANDS = {"run", "copilot", "list", "tasks", "history", "diff", "throughput",
-             "fit", "report", "doctor"}
+_COMMANDS = {"run", "copilot", "hermes", "list", "tasks", "history", "diff",
+            "throughput", "fit", "report", "doctor"}
 
 
 def _inject_default_command(argv: List[str]) -> List[str]:
@@ -722,6 +731,51 @@ def _should_use_tui(args, console: Console) -> bool:
     return console.is_terminal and sys.stdin.isatty()
 
 
+def cmd_hermes(args, console: Console) -> int:
+    import os
+
+    from .providers.hermes_agent import (
+        HermesAgentProvider,
+        check_hermes_agent,
+        find_hermes_agent,
+    )
+
+    model_names = [
+        model.strip()
+        for model in (args.models or os.environ.get("HERMES_MODEL", "")).split(",")
+        if model.strip()
+    ]
+    if not model_names:
+        console.print(
+            "[red]error:[/red] choose a model with [bold]-m MODEL[/bold] "
+            "or set [bold]HERMES_MODEL[/bold]"
+        )
+        return 2
+    executable = find_hermes_agent()
+    if not executable:
+        console.print(
+            "[red]error:[/red] Hermes Agent was not found. "
+            "Install it and ensure [bold]hermes-agent[/bold] is on PATH."
+        )
+        return 1
+
+    try:
+        version = check_hermes_agent(executable)
+        if version:
+            console.print(f"[dim]Hermes Agent {version}[/dim]")
+        provider = HermesAgentProvider(
+            models=model_names, executable=executable, timeout=args.timeout
+        )
+        console.print(
+            "[dim]Using Hermes Agent in one-shot query mode; "
+            "quality only (no comparable speed or memory metrics).[/dim]\n"
+        )
+        return cmd_run(args, console, provider_override=provider)
+    except ProviderError as exc:
+        console.print(f"[red]error:[/red] {exc}")
+        return 1
+
+
 # ---------------------------------------------------------------------------
 def main(argv: Optional[List[str]] = None) -> int:
     if argv is None:
@@ -731,6 +785,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     console = Console()
 
     command = getattr(args, "command", None)
+    if command == "hermes":
+        return cmd_hermes(args, console)
     if command == "list":
         return cmd_list(args, console)
     if command == "copilot":
