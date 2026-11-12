@@ -41,6 +41,37 @@ class OpenAICompatibleProvider(Provider):
     api_key_env: Optional[str] = "OPENAI_API_KEY"
     _process_hint: Optional[str] = None
 
+    @staticmethod
+    def _http_error_message(exc: httpx.HTTPError) -> str:
+        response = getattr(exc, "response", None)
+        if response is None:
+            return str(exc)
+        payload = None
+        try:
+            response.read()
+            payload = response.json()
+        except (RuntimeError, ValueError, httpx.HTTPError, AttributeError):
+            try:
+                body = response.content
+            except httpx.ResponseNotRead:
+                body = b""
+            if body:
+                try:
+                    payload = json.loads(body.decode("utf-8", errors="replace"))
+                except json.JSONDecodeError:
+                    payload = None
+        if isinstance(payload, dict):
+            error = payload.get("error")
+            if isinstance(error, dict):
+                message = error.get("message")
+                if isinstance(message, str) and message:
+                    return message
+            for key in ("message", "detail"):
+                message = payload.get(key)
+                if isinstance(message, str) and message:
+                    return message
+        return str(exc)
+
     def __init__(self, host: Optional[str] = None, api_key: Optional[str] = None):
         env_host = os.environ.get(self.host_env) if self.host_env else None
         self.host = normalize_host(host or env_host or "", self.default_host)
@@ -67,7 +98,10 @@ class OpenAICompatibleProvider(Provider):
             r = httpx.get(f"{self.host}/v1/models", headers=self._headers(), timeout=10.0)
             r.raise_for_status()
         except httpx.HTTPError as exc:
-            raise ProviderError(f"Could not reach {self.name} at {self.host}: {exc}")
+            raise ProviderError(
+                f"Could not reach {self.name} at {self.host}: "
+                f"{self._http_error_message(exc)}"
+            ) from exc
         models = [
             ModelInfo(name=m.get("id", ""), provider=self.name)
             for m in r.json().get("data", [])
@@ -134,7 +168,10 @@ class OpenAICompatibleProvider(Provider):
                             if on_token is not None:
                                 on_token(piece)
         except httpx.HTTPError as exc:
-            raise ProviderError(f"{self.name} generate failed for {model!r}: {exc}")
+            raise ProviderError(
+                f"{self.name} generate failed for {model!r}: "
+                f"{self._http_error_message(exc)}"
+            ) from exc
 
         end = time.perf_counter()
         speed.total_s = end - start

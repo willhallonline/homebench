@@ -25,7 +25,7 @@ def build_parser() -> argparse.ArgumentParser:
     sub = p.add_subparsers(dest="command")
 
     # ---- shared run options (also used when no subcommand is given) ----
-    def add_run_options(sp: argparse.ArgumentParser) -> None:
+    def add_run_options(sp: argparse.ArgumentParser, *, include_provider: bool = True) -> None:
         sp.add_argument("-m", "--models", default=None,
                         help="comma-separated model names to benchmark")
         sp.add_argument("--all", action="store_true",
@@ -33,12 +33,13 @@ def build_parser() -> argparse.ArgumentParser:
                              "(default: the 3 smallest)")
         sp.add_argument("--limit", type=int, default=None,
                         help="benchmark at most N models")
-        sp.add_argument("--provider", default=None,
-                        help="ollama|lmstudio|llamacpp|vllm|mlx|openai "
-                             "(default: auto-detect)")
-        sp.add_argument("--host", default=None,
-                        help="provider host URL (default: the provider's env var "
-                             "or its standard localhost port)")
+        if include_provider:
+            sp.add_argument("--provider", default=None,
+                            help="ollama|lmstudio|llamacpp|vllm|mlx|openai "
+                                 "(default: auto-detect)")
+            sp.add_argument("--host", default=None,
+                            help="provider host URL (default: the provider's env var "
+                                 "or its standard localhost port)")
         sp.add_argument("--full", action="store_true",
                         help="run the full quality suite (default: a fast subset)")
         sp.add_argument("--max-tokens", type=int, default=256,
@@ -90,6 +91,15 @@ def build_parser() -> argparse.ArgumentParser:
 
     run_p = sub.add_parser("run", help="run the benchmark (default)")
     add_run_options(run_p)
+
+    copilot_p = sub.add_parser(
+        "copilot",
+        help="benchmark Copilot CLI responses (quality only)",
+        description="Run the quality suite through GitHub Copilot CLI. "
+                    "Requires the `copilot` command to be installed and signed in.",
+    )
+    add_run_options(copilot_p, include_provider=False)
+    copilot_p.set_defaults(no_speed=True, no_warmup=True, no_rss=True)
 
     list_p = sub.add_parser("list", help="list discovered models and exit")
     list_p.add_argument("--provider", default=None)
@@ -179,8 +189,8 @@ def build_parser() -> argparse.ArgumentParser:
     return p
 
 
-_COMMANDS = {"run", "list", "tasks", "history", "diff", "throughput", "fit",
-             "report", "doctor"}
+_COMMANDS = {"run", "copilot", "list", "tasks", "history", "diff", "throughput",
+             "fit", "report", "doctor"}
 
 
 def _inject_default_command(argv: List[str]) -> List[str]:
@@ -607,11 +617,11 @@ def cmd_throughput(args, console: Console) -> int:
     return 0
 
 
-def cmd_run(args, console: Console) -> int:
+def cmd_run(args, console: Console, provider_override=None) -> int:
     from .quality import PackError
 
     try:
-        provider = _resolve_provider(args, console)
+        provider = provider_override or _resolve_provider(args, console)
         models = _select_models(provider, args, console)
         runner = _build_runner(provider, args)
     except ProviderError as exc:
@@ -653,6 +663,56 @@ def cmd_run(args, console: Console) -> int:
     return 0
 
 
+def cmd_copilot(args, console: Console) -> int:
+    import os
+
+    from .copilot_bridge import (
+        CopilotBridge,
+        CopilotCLIError,
+        check_copilot_cli,
+        find_copilot_cli,
+    )
+    from .providers.copilot_cli import CopilotCLIProvider
+
+    model_names = [
+        model.strip()
+        for model in (args.models or os.environ.get("COPILOT_MODEL", "")).split(",")
+        if model.strip()
+    ]
+    if not model_names:
+        console.print(
+            "[red]error:[/red] choose a model with [bold]-m MODEL[/bold] "
+            "or set [bold]COPILOT_MODEL[/bold]"
+        )
+        return 2
+    executable = find_copilot_cli()
+    if not executable:
+        console.print(
+            "[red]error:[/red] GitHub Copilot CLI was not found. "
+            "Install it from https://docs.github.com/en/copilot/how-tos/"
+            "copilot-cli/set-up-copilot-cli/install-copilot-cli"
+        )
+        return 1
+
+    try:
+        version = check_copilot_cli(executable)
+        if version:
+            console.print(f"[dim]Copilot CLI {version}[/dim]")
+        with CopilotBridge(model_names, executable, timeout=args.timeout) as bridge:
+            provider = CopilotCLIProvider(host=bridge.url)
+            console.print(
+                "[dim]Using Copilot CLI through a temporary localhost bridge; "
+                "quality only (no comparable speed or memory metrics).[/dim]\n"
+            )
+            return cmd_run(args, console, provider_override=provider)
+    except CopilotCLIError as exc:
+        console.print(f"[red]error:[/red] {exc}")
+        return 1
+    except OSError as exc:
+        console.print(f"[red]error:[/red] could not start Copilot bridge: {exc}")
+        return 1
+
+
 def _should_use_tui(args, console: Console) -> bool:
     if getattr(args, "tui", False):
         return True
@@ -673,6 +733,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     command = getattr(args, "command", None)
     if command == "list":
         return cmd_list(args, console)
+    if command == "copilot":
+        return cmd_copilot(args, console)
     if command == "tasks":
         return cmd_tasks(args, console)
     if command == "doctor":

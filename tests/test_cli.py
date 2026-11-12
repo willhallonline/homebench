@@ -7,6 +7,9 @@ def test_inject_default_command():
     assert _inject_default_command(["-m", "x"]) == ["run", "-m", "x"]
     # explicit subcommands are left untouched
     assert _inject_default_command(["list"]) == ["list"]
+    assert _inject_default_command(["copilot", "-m", "model"]) == [
+        "copilot", "-m", "model"
+    ]
     assert _inject_default_command(["run", "--limit", "2"]) == ["run", "--limit", "2"]
     # global help/version bypass the default
     assert _inject_default_command(["--version"]) == ["--version"]
@@ -29,6 +32,15 @@ def test_run_flags_parse():
     assert args.no_tui is True
     assert args.limit == 3
     assert args.judge == "m"
+
+
+def test_copilot_command_defaults_to_quality_only():
+    args = build_parser().parse_args(["copilot", "-m", "model-a"])
+    assert args.command == "copilot"
+    assert args.models == "model-a"
+    assert args.no_speed is True
+    assert args.no_warmup is True
+    assert args.no_rss is True
 
 
 def test_task_flags_accept_multiple_and_repeated_packs():
