@@ -75,6 +75,7 @@ homebench --provider llamacpp    # llama.cpp server (llama-server)
 homebench --provider vllm        # vLLM
 homebench --provider openai --host http://localhost:5000   # any OpenAI-compatible server
 homebench copilot -m claude-sonnet-5.5                   # benchmark Copilot CLI
+homebench hermes -m gpt-6-luna                           # benchmark through Hermes CLI
 homebench --refresh-cache        # recompute instead of reusing cached responses
 homebench --no-quality           # speed + memory only (fast)
 homebench --no-speed             # quality only
@@ -130,6 +131,23 @@ temporary directory with no tools enabled; no repository files are exposed to th
 evaluates Copilot CLI responses, not the VS Code Copilot experience. Speed,
 memory, sampling controls, and token usage are not comparable for this
 provider, so the command runs quality-only by default.
+
+### Benchmark through Hermes CLI
+
+Install and configure the full Hermes CLI (`hermes`), then run:
+
+```bash
+homebench hermes -m <model-id>
+```
+
+Homebench invokes `hermes -z` for each task, selecting the model with `-m` and
+the `copilot` provider. Use the model ID accepted by that Hermes/Copilot setup;
+for example, `gpt-6-luna` is supported, while `gpt-6.0-luna` is not. You can
+pass comma-separated model IDs, `--full`, or `--tasks pack.json` as with the
+Copilot command. `HERMES_MODEL` can supply the model instead of `-m`.
+
+Hermes benchmarking is quality-only. Comparable speed, memory, and token
+usage metrics are not available through this CLI path.
 
 When open-ended tasks are included (for example, `--full --judge MODEL`), each
 model's quality run has two visible phases in both the full-screen and plain
