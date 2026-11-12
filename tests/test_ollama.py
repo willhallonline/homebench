@@ -2,6 +2,23 @@ from homebench.models import SpeedMetrics
 from homebench.providers.ollama import OllamaProvider, _normalize_host
 
 
+class _FakeStream:
+    def __init__(self, lines):
+        self.lines = lines
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        return False
+
+    def raise_for_status(self):
+        pass
+
+    def iter_lines(self):
+        return iter(self.lines)
+
+
 def test_normalize_host():
     assert _normalize_host("localhost:11434") == "http://localhost:11434"
     assert _normalize_host("http://x:1/") == "http://x:1"
@@ -28,3 +45,19 @@ def test_fill_timings_zero_eval_is_safe():
     speed = SpeedMetrics()
     OllamaProvider._fill_timings(speed, {"eval_count": 0, "eval_duration": 0})
     assert speed.tokens_per_sec == 0.0
+
+
+def test_generate_for_judge_disables_thinking(monkeypatch):
+    payload = {}
+
+    def fake_stream(*args, **kwargs):
+        payload.update(kwargs["json"])
+        return _FakeStream(['{"response":"SCORE: 5 — correct","done":true}'])
+
+    import homebench.providers.ollama as mod
+    monkeypatch.setattr(mod.httpx, "stream", fake_stream)
+
+    result = OllamaProvider().generate_for_judge("model", "prompt")
+
+    assert payload["think"] is False
+    assert result.text == "SCORE: 5 — correct"

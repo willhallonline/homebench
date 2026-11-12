@@ -41,7 +41,7 @@ class LLMJudge:
             response=(response or "(empty response)").strip(),
         )
         try:
-            result = self.provider.generate(
+            result = self.provider.generate_for_judge(
                 self.model, prompt, max_tokens=120, temperature=0.0,
                 timeout=self.timeout,
             )

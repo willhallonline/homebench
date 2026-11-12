@@ -63,6 +63,21 @@ class Provider(ABC):
     ) -> GenerationResult:
         """Generate a completion, streaming tokens to ``on_token``."""
 
+    def generate_for_judge(
+        self,
+        model: str,
+        prompt: str,
+        *,
+        max_tokens: int = 120,
+        temperature: float = 0.0,
+        timeout: float = 120.0,
+    ) -> GenerationResult:
+        """Generate a judge response, allowing providers to suppress reasoning."""
+        return self.generate(
+            model, prompt, max_tokens=max_tokens, temperature=temperature,
+            timeout=timeout,
+        )
+
     def memory(self, model: str) -> MemoryMetrics:  # pragma: no cover - optional
         """Memory footprint of the (loaded) model. Best-effort; may be empty."""
         return MemoryMetrics()
