@@ -73,6 +73,7 @@ class OllamaProvider(Provider):
         seed: Optional[int] = None,
         on_token: TokenCallback = None,
         timeout: float = 300.0,
+        think: Optional[bool] = None,
     ) -> GenerationResult:
         options = {"num_predict": max_tokens, "temperature": temperature}
         if seed is not None:
@@ -83,6 +84,8 @@ class OllamaProvider(Provider):
             "stream": True,
             "options": options,
         }
+        if think is not None:
+            payload["think"] = think
 
         speed = SpeedMetrics()
         chunks: List[str] = []
@@ -130,6 +133,20 @@ class OllamaProvider(Provider):
         speed.eval_s = (data.get("eval_duration", 0) or 0) / _NS
         if speed.eval_s > 0 and speed.output_tokens > 0:
             speed.tokens_per_sec = speed.output_tokens / speed.eval_s
+
+    def generate_for_judge(
+        self,
+        model: str,
+        prompt: str,
+        *,
+        max_tokens: int = 120,
+        temperature: float = 0.0,
+        timeout: float = 120.0,
+    ) -> GenerationResult:
+        return self.generate(
+            model, prompt, max_tokens=max_tokens, temperature=temperature,
+            timeout=timeout, think=False,
+        )
 
     # ------------------------------------------------------------------
     def memory(self, model: str) -> MemoryMetrics:

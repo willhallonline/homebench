@@ -23,6 +23,7 @@
     {
       "id": "code_04_reverse_words",
       "category": "open",
+      "max_tokens": 512,
       "prompt": "Write `reverse_words(text)` that reverses the order of whitespace-separated words and joins them with one space. Return an empty string for empty or whitespace-only input. Return code only.",
       "reference": "def reverse_words(text):\n    return \" \".join(text.split()[::-1])"
     },
@@ -47,6 +48,7 @@
     {
       "id": "code_08_fizz_buzz",
       "category": "open",
+      "max_tokens": 512,
       "prompt": "Write `fizz_buzz(n)` that returns strings for integers 1 through n. Use `FizzBuzz` for multiples of both 3 and 5, `Fizz` for multiples of 3, `Buzz` for multiples of 5, and the number's decimal string otherwise. Return an empty list when n is less than 1. Return code only.",
       "reference": "def fizz_buzz(n):\n    result = []\n    for number in range(1, n + 1):\n        if number % 15 == 0:\n            result.append(\"FizzBuzz\")\n        elif number % 3 == 0:\n            result.append(\"Fizz\")\n        elif number % 5 == 0:\n            result.append(\"Buzz\")\n        else:\n            result.append(str(number))\n    return result"
     },
@@ -59,66 +61,77 @@
     {
       "id": "code_10_flatten_one_level",
       "category": "open",
+      "max_tokens": 512,
       "prompt": "Write `flatten_one_level(items)` that concatenates the elements of each inner iterable into one list, flattening exactly one level. Do not recursively flatten nested values. Return code only.",
       "reference": "def flatten_one_level(items):\n    return [value for group in items for value in group]"
     },
     {
       "id": "code_11_merge_sorted",
       "category": "open",
+      "max_tokens": 512,
       "prompt": "Write `merge_sorted(left, right)` that merges two ascending lists into a new ascending list in O(len(left) + len(right)) time. Preserve duplicate values and do not mutate either input. Return code only.",
       "reference": "def merge_sorted(left, right):\n    merged = []\n    i = j = 0\n    while i < len(left) and j < len(right):\n        if left[i] <= right[j]:\n            merged.append(left[i])\n            i += 1\n        else:\n            merged.append(right[j])\n            j += 1\n    merged.extend(left[i:])\n    merged.extend(right[j:])\n    return merged"
     },
     {
       "id": "code_12_binary_search",
       "category": "open",
+      "max_tokens": 512,
       "prompt": "Write `binary_search(numbers, target)` for an ascending list. Return the index of the first occurrence of target, or -1 if absent. The list may contain duplicates. Use O(log n) time. Return code only.",
       "reference": "def binary_search(numbers, target):\n    low, high = 0, len(numbers)\n    while low < high:\n        middle = (low + high) // 2\n        if numbers[middle] < target:\n            low = middle + 1\n        else:\n            high = middle\n    return low if low < len(numbers) and numbers[low] == target else -1"
     },
     {
       "id": "code_13_valid_brackets",
       "category": "open",
+      "max_tokens": 512,
       "prompt": "Write `valid_brackets(text)` that checks whether `()`, `[]`, and `{}` are properly balanced and nested. Ignore all characters other than brackets. Return code only.",
       "reference": "def valid_brackets(text):\n    pairs = {\")\": \"(\", \"]\": \"[\", \"}\": \"{\"}\n    stack = []\n    for char in text:\n        if char in \"([{\":\n            stack.append(char)\n        elif char in pairs:\n            if not stack or stack.pop() != pairs[char]:\n                return False\n    return not stack"
     },
     {
       "id": "code_14_group_anagrams",
       "category": "open",
+      "max_tokens": 512,
       "prompt": "Write `group_anagrams(words)` that groups words containing the same letters, ignoring case. Preserve the original spelling and order of words within each group, and order groups by the first word that creates each group. Return code only.",
       "reference": "def group_anagrams(words):\n    groups = {}\n    for word in words:\n        key = tuple(sorted(word.lower()))\n        groups.setdefault(key, []).append(word)\n    return list(groups.values())"
     },
     {
       "id": "code_15_top_k_frequent",
       "category": "open",
+      "max_tokens": 512,
       "prompt": "Write `top_k_frequent(numbers, k)` that returns up to k distinct values ordered by descending frequency. Break frequency ties by ascending numeric value. Return an empty list when k is less than or equal to zero. Return code only.",
       "reference": "from collections import Counter\n\ndef top_k_frequent(numbers, k):\n    if k <= 0:\n        return []\n    counts = Counter(numbers)\n    return sorted(counts, key=lambda value: (-counts[value], value))[:k]"
     },
     {
       "id": "code_16_merge_intervals",
       "category": "open",
+      "max_tokens": 512,
       "prompt": "Write `merge_intervals(intervals)` for intervals represented as `[start, end]`. Sort by start and merge overlapping or touching intervals (the next start may equal the current end). Return a new list and do not mutate the input. Return code only.",
       "reference": "def merge_intervals(intervals):\n    merged = []\n    for start, end in sorted(intervals):\n        if not merged or start > merged[-1][1]:\n            merged.append([start, end])\n        else:\n            merged[-1][1] = max(merged[-1][1], end)\n    return merged"
     },
     {
       "id": "code_17_shortest_path",
       "category": "open",
+      "max_tokens": 512,
       "prompt": "Write `shortest_path(graph, start, target)` for an unweighted directed graph represented by a dictionary from nodes to neighbor lists. Return a list of nodes on a shortest path, including both endpoints, or an empty list if unreachable. Return `[start]` when start equals target. Nodes are hashable. Return code only.",
       "reference": "from collections import deque\n\ndef shortest_path(graph, start, target):\n    queue = deque([start])\n    previous = {start: None}\n    while queue:\n        node = queue.popleft()\n        if node == target:\n            path = []\n            while node is not None:\n                path.append(node)\n                node = previous[node]\n            return path[::-1]\n        for neighbor in graph.get(node, []):\n            if neighbor not in previous:\n                previous[neighbor] = node\n                queue.append(neighbor)\n    return []"
     },
     {
       "id": "code_18_lru_cache",
       "category": "open",
+      "max_tokens": 512,
       "prompt": "Implement class `LRUCache` with `__init__(capacity)`, `get(key)`, and `put(key, value)`. `get` returns -1 when absent and marks a hit as most recently used. `put` inserts or updates and evicts the least recently used item when over capacity. A non-positive capacity stores nothing. Return code only.",
       "reference": "from collections import OrderedDict\n\nclass LRUCache:\n    def __init__(self, capacity):\n        self.capacity = max(0, capacity)\n        self.items = OrderedDict()\n\n    def get(self, key):\n        if key not in self.items:\n            return -1\n        self.items.move_to_end(key)\n        return self.items[key]\n\n    def put(self, key, value):\n        if self.capacity == 0:\n            return\n        if key in self.items:\n            self.items.move_to_end(key)\n        self.items[key] = value\n        if len(self.items) > self.capacity:\n            self.items.popitem(last=False)"
     },
     {
       "id": "code_19_parse_key_value",
       "category": "open",
+      "max_tokens": 512,
       "prompt": "Write `parse_key_value(text)` for lines in `key=value` format. Ignore blank lines and lines whose first non-whitespace character is `#`. Strip whitespace around keys and values, split on only the first `=`, let later duplicate keys replace earlier ones, and raise ValueError for any other non-ignored line. Return code only.",
       "reference": "def parse_key_value(text):\n    result = {}\n    for line in text.splitlines():\n        stripped = line.strip()\n        if not stripped or stripped.startswith(\"#\"):\n            continue\n        if \"=\" not in line:\n            raise ValueError(f\"invalid line: {line!r}\")\n        key, value = line.split(\"=\", 1)\n        result[key.strip()] = value.strip()\n    return result"
     },
     {
       "id": "code_20_memoize",
       "category": "open",
+      "max_tokens": 512,
       "prompt": "Write decorator `memoize(fn)` that caches results by positional and keyword arguments. Keyword argument order must not affect the cache key. Assume all arguments are hashable. Preserve the wrapped function's metadata with `functools.wraps`. Return code only.",
       "reference": "from functools import wraps\n\ndef memoize(fn):\n    cache = {}\n\n    @wraps(fn)\n    def wrapper(*args, **kwargs):\n        key = (args, tuple(sorted(kwargs.items())))\n        if key not in cache:\n            cache[key] = fn(*args, **kwargs)\n        return cache[key]\n\n    return wrapper"
     }

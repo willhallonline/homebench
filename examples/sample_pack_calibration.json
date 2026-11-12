@@ -56,6 +56,7 @@
       "category": "reasoning",
       "prompt": "Note: A train left at 9:10 a.m. and arrived at 10:05 a.m. Claim: The trip took 45 minutes. A) Supported B) Contradicted C) Not enough information. Reply with only A, B, or C.",
       "grader": { "type": "multiple_choice", "value": "B" },
+      "max_tokens": 512,
       "reference": "B"
     },
     {

@@ -35,6 +35,7 @@ class Task:
     max_tokens: int = 256
     reference: str = ""               # ideal answer, shown to the judge
     quick: bool = False               # part of the fast default subset
+    strip_think: bool = False         # task-pack responses grade only after </think>
 
 
 _TASKS: List[Task] = [
