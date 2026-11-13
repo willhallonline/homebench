@@ -43,6 +43,14 @@ def test_copilot_command_defaults_to_quality_only():
     assert args.no_rss is True
 
 
+def test_hermes_provider_and_model_flags_parse():
+    args = build_parser().parse_args([
+        "hermes", "-m", "qwen3.5:9b", "--provider", "ollama"
+    ])
+    assert args.models == "qwen3.5:9b"
+    assert args.provider == "ollama"
+
+
 def test_task_flags_accept_multiple_and_repeated_packs():
     parser = build_parser()
     args = parser.parse_args([

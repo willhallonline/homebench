@@ -137,14 +137,15 @@ provider, so the command runs quality-only by default.
 Install and configure the full Hermes CLI (`hermes`), then run:
 
 ```bash
-homebench hermes -m <model-id>
+homebench hermes -m <model-id> [--provider <provider>]
 ```
 
-Homebench invokes `hermes -z` for each task, selecting the model with `-m` and
-the `copilot` provider. Use the model ID accepted by that Hermes/Copilot setup;
-for example, `gpt-6-luna` is supported, while `gpt-6.0-luna` is not. You can
-pass comma-separated model IDs, `--full`, or `--tasks pack.json` as with the
-Copilot command. `HERMES_MODEL` can supply the model instead of `-m`.
+Homebench invokes `hermes -z` for each task, passing the selected model with
+`-m` and the selected provider with `--provider` (defaults to `copilot`). For
+example, use `--provider ollama` with a model ID configured in Hermes for
+Ollama. Use the model ID accepted by that Hermes provider. You can pass
+comma-separated model IDs, `--full`, or `--tasks pack.json` as with the Copilot
+command. `HERMES_MODEL` can supply the model instead of `-m`.
 
 Hermes benchmarking is quality-only. Comparable speed, memory, and token
 usage metrics are not available through this CLI path.

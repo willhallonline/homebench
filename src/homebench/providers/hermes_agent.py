@@ -43,10 +43,12 @@ class HermesAgentProvider(Provider):
     def __init__(
         self,
         models: Optional[List[str]] = None,
+        provider: str = "copilot",
         executable: str = "hermes",
         timeout: float = 300.0,
     ):
         self.models = list(dict.fromkeys(model.strip() for model in (models or []) if model.strip()))
+        self.provider = provider
         self.executable = executable
         self.timeout = timeout
 
@@ -90,7 +92,7 @@ class HermesAgentProvider(Provider):
             "-m",
             model,
             "--provider",
-            "copilot",
+            self.provider,
         ]
         start = time.perf_counter()
         try:

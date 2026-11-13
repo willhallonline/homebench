@@ -98,7 +98,12 @@ def build_parser() -> argparse.ArgumentParser:
         description="Run the quality suite through the full Hermes CLI. "
                     "Requires the `hermes` command to be installed.",
     )
-    add_run_options(hermes_p)
+    add_run_options(hermes_p, include_provider=False)
+    hermes_p.add_argument(
+        "--provider",
+        default="copilot",
+        help="provider to pass to Hermes (default: copilot)",
+    )
     hermes_p.set_defaults(no_speed=True, no_warmup=True, no_rss=True)
 
     copilot_p = sub.add_parser(
@@ -764,7 +769,10 @@ def cmd_hermes(args, console: Console) -> int:
         if version:
             console.print(f"[dim]Hermes {version}[/dim]")
         provider = HermesAgentProvider(
-            models=model_names, executable=executable, timeout=args.timeout
+            models=model_names,
+            provider=args.provider,
+            executable=executable,
+            timeout=args.timeout,
         )
         console.print(
             "[dim]Using the Hermes CLI in one-shot mode; "

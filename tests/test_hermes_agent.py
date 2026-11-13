@@ -30,7 +30,9 @@ def test_hermes_provider_runs_one_shot_query():
     with patch(
         "homebench.providers.hermes_agent.subprocess.run", return_value=result
     ) as run:
-        provider = HermesAgentProvider(["gpt-5.6-luna"], executable="hermes")
+        provider = HermesAgentProvider(
+            ["gpt-5.6-luna"], executable="hermes", provider="ollama"
+        )
         assert provider.is_available()
         assert provider.list_models() == [
             ModelInfo(name="gpt-5.6-luna", provider="hermes-agent")
@@ -42,7 +44,12 @@ def test_hermes_provider_runs_one_shot_query():
     assert command[:3] == ["hermes", "-z", "Answer with 42."]
     assert "-m" in command
     assert command[command.index("-m") + 1] == "gpt-5.6-luna"
-    assert command[command.index("--provider") + 1] == "copilot"
+    assert command[command.index("--provider") + 1] == "ollama"
+
+
+def test_hermes_provider_defaults_to_copilot():
+    provider = HermesAgentProvider(["model"])
+    assert provider.provider == "copilot"
 
 
 def test_hermes_provider_reports_cli_failure():
