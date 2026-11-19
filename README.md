@@ -74,12 +74,12 @@ homebench --provider lmstudio    # use LM Studio instead of auto-detect
 homebench --provider llamacpp    # llama.cpp server (llama-server)
 homebench --provider vllm        # vLLM
 homebench --provider openai --host http://localhost:5000   # any OpenAI-compatible server
-homebench copilot -m claude-sonnet-5.5                   # benchmark Copilot CLI
-homebench hermes -m gpt-6-luna                           # benchmark through Hermes CLI
+homebench -m copilot:claude-sonnet-5.5                   # benchmark Copilot CLI
+homebench -m hermes:gpt-6-luna                           # benchmark through Hermes CLI
 homebench --refresh-cache        # recompute instead of reusing cached responses
 homebench --no-quality           # speed + memory only (fast)
 homebench --no-speed             # quality only
-homebench --judge qwen3:8b       # enable LLM-as-judge (adds open-ended tasks)
+homebench --full --judge qwen3:8b # grade the full suite's open-ended tasks
 homebench --tasks pack1.yaml pack2.json  # use several custom packs instead of the built-in suite
 homebench --add-tasks pack1.yaml pack2.json  # add several packs to the built-in suite
 homebench --label "before tuning"  # tag this run for later diffing
@@ -117,12 +117,12 @@ copilot --version
 Then run the quality suite through Copilot:
 
 ```bash
-homebench copilot -m <model-id>
+homebench -m copilot:MODEL
 ```
 
-Use the exact model ID available in Copilot CLI. Pass comma-separated IDs to
-compare models, `--full` for the full suite, or `--tasks pack.json` for a
-custom task pack. `COPILOT_MODEL` can supply the model instead of `-m`.
+Use the exact model ID available in Copilot CLI. To compare multiple Copilot
+models, prefix each ID, for example `-m 'copilot:MODEL_A,copilot:MODEL_B'`.
+Use `--full` for the full suite or `--tasks pack.json` for a custom task pack.
 Activate `.venv` in each new terminal before running `homebench`.
 
 This command starts a temporary OpenAI-compatible bridge on localhost, runs
@@ -137,15 +137,16 @@ provider, so the command runs quality-only by default.
 Install and configure the full Hermes CLI (`hermes`), then run:
 
 ```bash
-homebench hermes -m <model-id> [--provider <provider>]
+homebench -m hermes:MODEL
 ```
 
 Homebench invokes `hermes -z` for each task, passing the selected model with
-`-m` and the selected provider with `--provider` (defaults to `copilot`). For
-example, use `--provider ollama` with a model ID configured in Hermes for
-Ollama. Use the model ID accepted by that Hermes provider. You can pass
-comma-separated model IDs, `--full`, or `--tasks pack.json` as with the Copilot
-command. `HERMES_MODEL` can supply the model instead of `-m`.
+`-m` and using the Copilot upstream by default. To choose another upstream, use
+the `homebench hermes` subcommand, for example
+`homebench hermes -m qwen:9b --provider ollama`. Use the model ID accepted by
+that Hermes provider. You can pass comma-separated model IDs, `--full`, or
+`--tasks pack.json`. The subcommand also accepts `HERMES_MODEL` as an
+alternative to `-m`.
 
 Hermes benchmarking is quality-only. Comparable speed, memory, and token
 usage metrics are not available through this CLI path.
@@ -153,15 +154,17 @@ usage metrics are not available through this CLI path.
 ### Compare local models and CLI harnesses in one run
 
 ```bash
-homebench --provider ollama -m 'qwen:9b,[hermes]:gpt-6-luna,[copilot]:gpt-6-luna'
-homebench -m '[claude]:sonnet,[codex]:CODEX_MODEL,[opencode]:PROVIDER/MODEL' --judge '[copilot]:gpt-6-luna'
+homebench --provider ollama -m 'qwen:9b,hermes:gpt-6-luna,copilot:gpt-6-luna,codex:CODEX_MODEL'
+homebench --full -m 'claude:sonnet,codex:CODEX_MODEL,opencode:PROVIDER/MODEL' --judge copilot:gpt-6-luna
 ```
 
 In the default `homebench run` command, unqualified names use the selected
-or auto-detected provider. `[HARNESS]:MODEL` uses that CLI and appears as a separate leaderboard entry,
-even if another harness uses the same model ID. Hermes uses its Copilot
-upstream by default; `--provider` selects the provider for unqualified names
-only. A list containing only qualified names needs no local benchmark provider.
+or auto-detected provider. A recognized `HARNESS:MODEL` prefix uses that CLI,
+and each harness/model pair gets a separate leaderboard entry. Other colon
+tags, such as `qwen:9b`, remain local model IDs. The bracketed `[HARNESS]:MODEL`
+spelling still works. Hermes uses its Copilot upstream by default;
+`--provider` selects the provider for unqualified names only. A list
+containing only qualified names needs no local benchmark provider.
 
 All entries use the same quality suite and, if enabled, the same `--judge`.
 The CLI entries are quality-only: Homebench skips their speed and memory
@@ -170,13 +173,12 @@ probes and excludes them from the laptop value recommendation. Use
 
 | Selector | CLI requirements |
 | --- | --- |
-| `[claude]:MODEL` | Claude Code with `--bare`. Configure `ANTHROPIC_API_KEY` or the supported cloud-provider credentials for bare mode. |
-| `[codex]:MODEL` | An authenticated Codex CLI supporting `exec --ephemeral --ignore-user-config`. Runs in a temporary directory with a read-only sandbox and no approval prompts, not with tools disabled. |
-| `[opencode]:PROVIDER/MODEL` | OpenCode supporting `run --pure --format=json`. Use an available built-in provider and its configured credentials; Homebench does not load your OpenCode config directory or plugins. |
+| `claude:MODEL` | Claude Code with `--bare`. Configure `ANTHROPIC_API_KEY` or the supported cloud-provider credentials for bare mode. |
+| `codex:MODEL` | An authenticated Codex CLI supporting `exec --ephemeral --ignore-user-config`. Runs in a temporary directory with a read-only sandbox and no approval prompts, not with tools disabled. |
+| `opencode:PROVIDER/MODEL` | OpenCode supporting `run --pure --format=json`. Use an available built-in provider and its configured credentials; Homebench does not load your OpenCode config directory or plugins. |
 
 These three adapters are benchmark-only. `--judge` accepts one local model,
-`[copilot]:MODEL`, or `[hermes]:MODEL`. The original `copilot:MODEL` and
-`hermes:MODEL` judge spellings still work.
+`copilot:MODEL`, or `hermes:MODEL`. The bracketed judge spellings still work.
 
 When open-ended tasks are included (for example, `--full --judge MODEL`), each
 model's quality run has two visible phases in both the full-screen and plain
@@ -207,7 +209,8 @@ A real quick-suite run on an Apple M1 (16 GB), via Ollama:
 
 ## Providers
 
-At least one local model runner must be reachable:
+For unqualified model IDs on `homebench run`, the selected or auto-detected
+provider must be reachable:
 
 | Provider | `--provider` | Default host | Host env var | Notes |
 | --- | --- | --- | --- | --- |
@@ -224,14 +227,26 @@ Auto-detection tries Ollama → LM Studio → llama.cpp → vLLM (the `mlx` and 
 
 The suite is small on purpose — enough tasks across categories to *separate* models, few enough that every model runs in a couple of minutes on a laptop. Each task is graded deterministically (exact numeric match, multiple-choice letter, substring, valid-JSON, regex). Temperature is 0 and a fixed seed is used for reproducibility. See `homebench tasks` for the list.
 
-The optional `--judge MODEL` flag scores open-ended tasks 1–5 against a reference answer. A bare model ID, including a tag like `qwen3:8b`, uses the benchmark provider. To choose a judge independently, use either existing CLI integration:
+Use one optional `--judge MODEL` per run to score every open-ended answer
+against its reference on a 1–5 scale, regardless of which harness generated it.
+Use `--full` to include the built-in open-ended tasks, or choose a custom pack
+with open-ended tasks. Deterministic tasks still use their own graders.
+
+On `homebench run`, a bare judge ID such as `qwen3:8b` uses the selected or
+auto-detected provider, even if all benchmark targets use CLI harnesses. To use
+a CLI judge instead, select `copilot:MODEL` or `hermes:MODEL`:
 
 ```bash
-homebench --provider ollama --judge copilot:gpt-6-luna
-homebench copilot -m gpt-6-luna --judge hermes:gpt-6-luna
+homebench --full --provider ollama --judge copilot:gpt-6-luna
+homebench --full -m 'copilot:gpt-6-luna,codex:CODEX_MODEL' --judge hermes:gpt-6-luna
 ```
 
-Both selectors work with `run`, `copilot`, and `hermes`. Select one judge per run. Hermes judging uses Hermes's Copilot upstream, independent of the benchmark's `--provider`, and requires a Hermes CLI that supports `chat --safe-mode` and `--toolsets`. A CLI judge sends each graded task's prompt, reference answer, and benchmark response to its upstream. Ollama judge calls disable separate thinking output when supported so the score can be returned directly. Judge scores are a signal, not an oracle.
+Hermes judging uses Hermes's Copilot upstream, independent of the benchmark's
+`--provider`, and requires a Hermes CLI that supports `chat --safe-mode` and
+`--toolsets`. A CLI judge sends each graded task's prompt, reference answer, and
+benchmark response to its upstream. Ollama judge calls disable separate thinking
+output when supported so the score can be returned directly. Judge scores are
+a signal, not an oracle.
 
 ### Fast by default
 

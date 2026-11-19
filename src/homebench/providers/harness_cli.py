@@ -53,17 +53,25 @@ def _codex_text(output: str) -> str:
 
 
 def _opencode_text(output: str) -> str:
-    parts = []
-    complete = False
+    parts: list[str] = []
+    answer = ""
     for event in _events(output):
         if event["type"] == "error":
             error = event.get("error") or {}
             raise ValueError((error.get("data") or {}).get("message") or "OpenCode reported an unsuccessful run")
-        if event["type"] == "text":
+        if event["type"] == "step_start":
+            parts.clear()
+            answer = ""
+        elif event["type"] == "text":
+            answer = ""
             parts.append((event.get("part") or {}).get("text") or "")
-        if event["type"] == "step_finish":
-            complete = True
-    return "\n".join(parts) if complete else ""
+        elif event["type"] == "step_finish":
+            reason = (event.get("part") or {}).get("reason")
+            answer = "\n".join(parts) if reason == "stop" else ""
+            parts.clear()
+    if not answer.strip():
+        raise ValueError("OpenCode did not finish with a complete text answer")
+    return answer
 
 
 @dataclass(frozen=True)
@@ -101,7 +109,7 @@ class HarnessCLIProvider(Provider):
         self.timeout = timeout
         executable = shutil.which(self.spec.executable)
         if not executable:
-            raise ProviderError(f"[{backend}]:MODEL requires {self.spec.executable!r} on PATH")
+            raise ProviderError(f"{backend}:MODEL requires {self.spec.executable!r} on PATH")
         self.executable = executable
         self._run(["--version"], timeout=10)
 

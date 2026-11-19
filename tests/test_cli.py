@@ -1,4 +1,5 @@
 import json
+import shutil
 import subprocess
 from io import StringIO
 
@@ -17,8 +18,8 @@ def test_inject_default_command():
     assert _inject_default_command(["-m", "x"]) == ["run", "-m", "x"]
     # explicit subcommands are left untouched
     assert _inject_default_command(["list"]) == ["list"]
-    assert _inject_default_command(["copilot", "-m", "model"]) == [
-        "copilot", "-m", "model"
+    assert _inject_default_command(["hermes", "-m", "model"]) == [
+        "hermes", "-m", "model"
     ]
     assert _inject_default_command(["run", "--limit", "2"]) == ["run", "--limit", "2"]
     # global help/version bypass the default
@@ -44,13 +45,11 @@ def test_run_flags_parse():
     assert args.judge == "m"
 
 
-def test_copilot_command_defaults_to_quality_only():
-    args = build_parser().parse_args(["copilot", "-m", "model-a"])
-    assert args.command == "copilot"
-    assert args.models == "model-a"
-    assert args.no_speed is True
-    assert args.no_warmup is True
-    assert args.no_rss is True
+def test_legacy_copilot_subcommand_is_rejected(capsys):
+    with pytest.raises(SystemExit) as exc:
+        main(["copilot", "-m", "model-a"])
+    assert exc.value.code == 2
+    assert "unrecognized arguments: copilot" in capsys.readouterr().err
 
 
 def test_hermes_provider_and_model_flags_parse():
@@ -175,7 +174,9 @@ def test_judge_startup_errors_prevent_benchmark(selector, error, monkeypatch):
     assert not provider.calls
 
 
-def test_mixed_model_run_uses_one_suite_and_only_measures_local_speed(tmp_path, monkeypatch, capsys):
+def test_mixed_model_run_shares_one_judge_and_only_measures_local_speed(tmp_path, monkeypatch, capsys):
+    monkeypatch.setenv("COLUMNS", "120")
+
     class LocalProvider(BenchmarkProvider):
         def list_models(self):
             return [ModelInfo(name="qwen:9b", provider=self.name)]
@@ -190,18 +191,32 @@ def test_mixed_model_run_uses_one_suite_and_only_measures_local_speed(tmp_path, 
     monkeypatch.setattr("homebench.providers.hermes_agent.find_hermes", lambda: "fake-hermes")
     monkeypatch.setenv("HOME", str(tmp_path))
     commands = []
+    judge_prompts = []
     real_run = subprocess.run
+    real_which = shutil.which
+    monkeypatch.setattr(shutil, "which", lambda cmd: "fake-codex" if cmd == "codex" else real_which(cmd))
 
     def fake_run(command, **kwargs):
-        if command[0] not in ("fake-copilot", "fake-hermes"):
+        if command[0] not in ("fake-copilot", "fake-hermes", "fake-codex"):
             return real_run(command, **kwargs)
         if command[1:] == ["--version"]:
             text = "test version"
+        elif "--model=judge" in command:
+            assert command[0] == "fake-copilot"
+            judge_prompts.append(command[command.index("-p") + 1])
+            text = json.dumps({"type": "assistant.message", "data": {"content": "SCORE: 5 Matches"}})
         else:
             commands.append(command)
-            text = "0" if command[0] == "fake-hermes" else json.dumps(
-                {"type": "assistant.message", "data": {"content": "42"}}
-            )
+            if command[0] == "fake-codex":
+                text = "\n".join(map(json.dumps, [
+                    {"type": "item.completed", "item": {"type": "agent_message", "text": "42"}},
+                    {"type": "turn.completed"},
+                ]))
+                assert kwargs["input"] in ("Answer the test task", "Explain the answer")
+            else:
+                text = "0" if command[0] == "fake-hermes" else json.dumps(
+                    {"type": "assistant.message", "data": {"content": "42"}}
+                )
         return subprocess.CompletedProcess(command, 0, stdout=text, stderr="")
 
     monkeypatch.setattr(subprocess, "run", fake_run)
@@ -209,36 +224,48 @@ def test_mixed_model_run_uses_one_suite_and_only_measures_local_speed(tmp_path, 
     pack_path.write_text(json.dumps({"tasks": [{
         "id": "test", "prompt": "Answer the test task",
         "grader": {"type": "exact_number", "value": 42},
+    }, {
+        "id": "open", "prompt": "Explain the answer", "reference": "Example explanation",
     }]}))
     output = tmp_path / "result.json"
     assert main([
-        "-m", "qwen:9b,[hermes]:gpt-6-luna,[copilot]:gpt-6-luna", "--tasks", str(pack_path),
-        "--no-tui", "--no-rss", "--no-save", "--json", str(output),
+        "-m", "qwen:9b,hermes:gpt-6-luna,copilot:gpt-6-luna,codex:model:tag,[codex]:model:tag",
+        "--tasks", str(pack_path), "--judge", "copilot:judge",
+        "--no-tui", "--no-rss", "--no-cache", "--no-save", "--json", str(output),
     ]) == 0
     result = json.loads(output.read_text())
     assert result["provider"] == "mixed"
     reports = result["reports"]
     assert [r["model"]["name"] for r in reports] == [
-        "qwen:9b", "[hermes]:gpt-6-luna", "[copilot]:gpt-6-luna",
+        "qwen:9b", "[hermes]:gpt-6-luna", "[copilot]:gpt-6-luna", "[codex]:model:tag",
     ]
-    assert [r["quality_score"] for r in reports] == [100.0, 0.0, 100.0]
-    assert [r["speed"]["tokens_per_sec"] for r in reports] == [20, 0, 0]
+    assert result["config"]["judge_model"] == "copilot:judge"
+    assert [r["quality_score"] for r in reports] == [100.0, 50.0, 100.0, 100.0]
+    assert len(judge_prompts) == len(reports)
+    for prompt, report in zip(judge_prompts, reports):
+        assert "Explain the answer" in prompt
+        assert "Example explanation" in prompt
+        assert f'RESPONSE:\n{report["task_results"][1]["response"]}' in prompt
+        assert report["task_results"][1]["detail"].startswith("judge 5/5")
+    assert [r["speed"]["tokens_per_sec"] for r in reports] == [20, 0, 0, 0]
     assert [(r["model"]["provider"], r["model"]["backend_model"]) for r in reports[1:]] == [
-        ("hermes-agent", "gpt-6-luna"), ("copilot-cli", "gpt-6-luna"),
+        ("hermes-agent", "gpt-6-luna"), ("copilot-cli", "gpt-6-luna"), ("codex-cli", "model:tag"),
     ]
-    assert [model for model, _ in provider.calls] == ["qwen:9b"] * 3  # warmup, speed, quality
-    assert provider.calls[-1][1] == "Answer the test task"
-    hermes, copilot = commands
+    assert [model for model, _ in provider.calls] == ["qwen:9b"] * 4
+    assert provider.calls[-2:] == [("qwen:9b", "Answer the test task"), ("qwen:9b", "Explain the answer")]
+    hermes, _, copilot, _, codex, _ = commands
     assert hermes[1:] == [
         "-z", "Answer the test task", "-m", "gpt-6-luna", "--provider", "copilot",
     ]
     assert "--model=gpt-6-luna" in copilot
     assert copilot[copilot.index("-p") + 1] == "Answer the test task"
+    assert "--model=model:tag" in codex
     terminal = " ".join(capsys.readouterr().out.split())
     assert "[hermes]:gpt-6-luna" in terminal and "[copilot]:gpt-6-luna" in terminal
 
 
-def test_qualified_only_run_does_not_discover_local_models(monkeypatch, tmp_path):
+@pytest.mark.parametrize("selector", ["hermes:model:tag", "[hermes]:model:tag"])
+def test_qualified_only_run_does_not_discover_local_models(monkeypatch, selector):
     def resolve(*args):
         pytest.fail("No local provider should be resolved")
 
@@ -250,7 +277,7 @@ def test_qualified_only_run_does_not_discover_local_models(monkeypatch, tmp_path
     monkeypatch.setattr("homebench.cli._resolve_provider", resolve)
     monkeypatch.setattr("homebench.cli._open_hermes_provider", lambda *args: provider)
     args = build_parser().parse_args([
-        "run", "-m", "[hermes]:model:tag", "--no-tui", "--no-save", "--no-cache",
+        "run", "-m", selector, "--no-tui", "--no-save", "--no-cache",
     ])
     assert cmd_run(args, Console(file=StringIO())) == 0
     assert provider.calls and set(provider.calls) == {"model:tag"}
@@ -258,6 +285,7 @@ def test_qualified_only_run_does_not_discover_local_models(monkeypatch, tmp_path
 
 @pytest.mark.parametrize(("models", "error"), [
     ("[hermes]:", "invalid model selector"),
+    ("copilot:", "requires a model name"),
     ("[unknown]:model", "invalid model selector"),
     ("missing,[copilot]:model", "no model matching 'missing'"),
 ])
@@ -281,8 +309,8 @@ def test_first_wave_harnesses_are_benchmark_only(monkeypatch):
 
     monkeypatch.setattr("homebench.cli.HarnessCLIProvider", adapter)
     args = build_parser().parse_args([
-        "run", "-m", "[claude]:sonnet,[codex]:model,[opencode]:openai/model",
-        "--judge", "[codex]:model",
+        "run", "-m", "claude:sonnet,codex:model,opencode:openai/model",
+        "--judge", "codex:model",
     ])
     output = StringIO()
     assert cmd_run(args, Console(file=output)) == 1

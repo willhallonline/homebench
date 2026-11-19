@@ -39,7 +39,7 @@ def build_parser() -> argparse.ArgumentParser:
     # ---- shared run options (also used when no subcommand is given) ----
     def add_run_options(sp: argparse.ArgumentParser, *, include_provider: bool = True) -> None:
         sp.add_argument("-m", "--models", default=None,
-                        help="comma-separated model IDs; with run, also accepts [HARNESS]:MODEL "
+                        help="comma-separated model IDs; with run, also accepts HARNESS:MODEL "
                              "(claude, codex, copilot, hermes, opencode)")
         sp.add_argument("--all", action="store_true",
                         help="benchmark every discovered model "
@@ -77,7 +77,7 @@ def build_parser() -> argparse.ArgumentParser:
                         help="disable psutil RSS sampling")
         sp.add_argument("--judge", default=None, metavar="MODEL", action=_SingleJudge,
                         help="score open-ended tasks with MODEL on the benchmark provider, "
-                             "or use [copilot]:MODEL or [hermes]:MODEL")
+                             "or use copilot:MODEL or hermes:MODEL")
         sp.add_argument("--no-tui", action="store_true",
                         help="use the plain renderer instead of the full-screen TUI")
         sp.add_argument("--tui", action="store_true",
@@ -119,15 +119,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="provider to pass to Hermes (default: copilot)",
     )
     hermes_p.set_defaults(no_speed=True, no_warmup=True, no_rss=True)
-
-    copilot_p = sub.add_parser(
-        "copilot",
-        help="benchmark Copilot CLI responses (quality only)",
-        description="Run the quality suite through GitHub Copilot CLI. "
-                    "Requires the `copilot` command to be installed and signed in.",
-    )
-    add_run_options(copilot_p, include_provider=False)
-    copilot_p.set_defaults(no_speed=True, no_warmup=True, no_rss=True)
 
     list_p = sub.add_parser("list", help="list discovered models and exit")
     list_p.add_argument("--provider", default=None)
@@ -217,7 +208,7 @@ def build_parser() -> argparse.ArgumentParser:
     return p
 
 
-_COMMANDS = {"run", "copilot", "hermes", "list", "tasks", "history", "diff",
+_COMMANDS = {"run", "hermes", "list", "tasks", "history", "diff",
              "throughput", "fit", "report", "doctor"}
 
 
@@ -313,18 +304,17 @@ def _harness_routes() -> dict[str, _HarnessRoute]:
 
 
 def _parse_selector(value: str, routes: dict[str, _HarnessRoute], *, judge: bool = False) -> tuple[str, str]:
-    if value.startswith("["):
-        backend, sep, model = value[1:].partition("]:")
-        if not sep or backend not in routes or not model.strip():
-            raise ProviderError(f"invalid model selector {value!r}; use [HARNESS]:MODEL "
-                                f"with one of: {', '.join(sorted(routes))}")
+    value = value.strip()
+    bracketed = value.startswith("[")
+    backend, sep, model = value[1:].partition("]:") if bracketed else value.partition(":")
+    if bracketed and (not sep or backend not in routes):
+        raise ProviderError(f"invalid model selector {value!r}; use HARNESS:MODEL "
+                            f"with one of: {', '.join(sorted(routes))}")
+    if sep and backend in routes:
+        if not model.strip():
+            flag = "--judge " if judge else ""
+            raise ProviderError(f"{flag}invalid model selector {value!r}: requires a model name")
         return backend, model.strip()
-    if judge:
-        backend, sep, model = value.partition(":")
-        if sep and backend in ("copilot", "hermes"):
-            if not model.strip():
-                raise ProviderError(f"--judge {backend}: requires a model name")
-            return backend, model.strip()
     if not value.strip():
         raise ProviderError("model ID must not be empty")
     return "", value.strip()
@@ -334,14 +324,16 @@ def _select_run_targets(
     args, console: Console, stack: ExitStack, provider_override: Optional[Provider],
 ) -> tuple[Provider, List[ModelInfo], dict[str, Provider]]:
     entries = [item.strip() for item in (args.models or "").split(",") if item.strip()]
-    if not any(item.startswith("[") for item in entries):
-        provider = provider_override or _resolve_provider(args, console)
-        return provider, _select_models(provider, args, console), {}
     if provider_override is not None:
-        raise ProviderError("use the run command for bracket-qualified model selectors")
+        if any(item.startswith("[") for item in entries):
+            raise ProviderError("use the run command for bracket-qualified model selectors")
+        return provider_override, _select_models(provider_override, args, console), {}
 
     routes = _harness_routes()
     targets = list(dict.fromkeys(_parse_selector(item, routes) for item in entries))
+    if not any(backend for backend, _ in targets):
+        provider = _resolve_provider(args, console)
+        return provider, _select_models(provider, args, console), {}
     if args.limit:
         targets = targets[:args.limit]
     if not targets:
@@ -409,7 +401,7 @@ def _open_hermes_judge(stack: ExitStack, models: List[str], timeout: float, cons
 
     executable = find_hermes()
     if not executable:
-        raise ProviderError("--judge [hermes]:MODEL needs the Hermes CLI on PATH")
+        raise ProviderError("--judge hermes:MODEL needs the Hermes CLI on PATH")
     check_hermes_judge(executable)
     return HermesAgentProvider(models=models, executable=executable, timeout=timeout, tool_free=True)
 
@@ -833,36 +825,6 @@ def _open_copilot_provider(stack: ExitStack, models: List[str], timeout: float, 
     return CopilotCLIProvider(host=bridge.url)
 
 
-def cmd_copilot(args, console: Console) -> int:
-    import os
-
-    model_names = [
-        model.strip()
-        for model in (args.models or os.environ.get("COPILOT_MODEL", "")).split(",")
-        if model.strip()
-    ]
-    if not model_names:
-        console.print(
-            "[red]error:[/red] choose a model with [bold]-m MODEL[/bold] "
-            "or set [bold]COPILOT_MODEL[/bold]"
-        )
-        return 2
-    if any(model.startswith("[") for model in model_names):
-        console.print("[red]error:[/red] use the run command for bracket-qualified model selectors")
-        return 2
-    try:
-        with ExitStack() as stack:
-            provider = _open_copilot_provider(stack, model_names, args.timeout, console)
-            console.print(
-                "[dim]Using Copilot CLI through a temporary localhost bridge; "
-                "quality only (no comparable speed or memory metrics).[/dim]\n"
-            )
-            return cmd_run(args, console, provider_override=provider)
-    except ProviderError as exc:
-        console.print(f"[red]error:[/red] {exc}")
-        return 1
-
-
 def _should_use_tui(args, console: Console) -> bool:
     if getattr(args, "tui", False):
         return True
@@ -931,8 +893,6 @@ def main(argv: Optional[List[str]] = None) -> int:
         return cmd_hermes(args, console)
     if command == "list":
         return cmd_list(args, console)
-    if command == "copilot":
-        return cmd_copilot(args, console)
     if command == "tasks":
         return cmd_tasks(args, console)
     if command == "doctor":
