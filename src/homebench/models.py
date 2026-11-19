@@ -28,9 +28,17 @@ class ModelInfo:
     quantization: str = ""
     family: str = ""
     digest: str = ""            # provider content hash; identifies a model version
+    backend_model: str = ""     # raw model ID when name is a qualified selector
+
+    @property
+    def request_name(self) -> str:
+        return self.backend_model or self.name
 
     def to_dict(self) -> Dict[str, Any]:
-        return asdict(self)
+        data = asdict(self)
+        if not self.backend_model:
+            del data["backend_model"]
+        return data
 
     @classmethod
     def from_dict(cls, d: Dict[str, Any]) -> "ModelInfo":

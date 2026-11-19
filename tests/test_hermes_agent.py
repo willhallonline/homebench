@@ -5,7 +5,7 @@ import pytest
 
 from homebench.models import ModelInfo
 from homebench.providers.base import ProviderError
-from homebench.providers.hermes_agent import HermesAgentProvider, _final_response
+from homebench.providers.hermes_agent import HermesAgentProvider, _final_response, check_hermes_judge
 
 
 def test_final_response_extracts_summary():
@@ -50,6 +50,15 @@ def test_hermes_provider_runs_one_shot_query():
 def test_hermes_provider_defaults_to_copilot():
     provider = HermesAgentProvider(["model"])
     assert provider.provider == "copilot"
+
+
+def test_hermes_judge_rejects_cli_without_safe_mode():
+    result = subprocess.CompletedProcess(
+        ["hermes", "chat", "--help"], 0, stdout="--toolsets --query --quiet", stderr="",
+    )
+    with patch("homebench.providers.hermes_agent.subprocess.run", return_value=result):
+        with pytest.raises(ProviderError, match="does not support --safe-mode"):
+            check_hermes_judge("hermes")
 
 
 def test_hermes_provider_reports_cli_failure():

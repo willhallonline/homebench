@@ -269,21 +269,22 @@ def diff_table(base: RunRecord, new: RunRecord) -> Table:
 
     for name in names:
         ra, rb = by_name_a.get(name), by_name_b.get(name)
+        label = Text(name or "")
         if rb is None:  # only in base -> removed
             ma = _metrics(ra)
-            t.add_row(name, fmt_quality(ma["quality"]), Text("–", style="dim"),
+            t.add_row(label, fmt_quality(ma["quality"]), Text("–", style="dim"),
                       fmt_tps(ma["tps"]), Text("–", style="dim"),
                       fmt_bytes(ma["mem"]), Text("removed", style="red"))
             continue
         mb = _metrics(rb)
         if ra is None:  # only in new -> added
-            t.add_row(name, fmt_quality(mb["quality"]), Text("new", style="green"),
+            t.add_row(label, fmt_quality(mb["quality"]), Text("new", style="green"),
                       fmt_tps(mb["tps"]), Text("new", style="green"),
                       fmt_bytes(mb["mem"]), Text("added", style="green"))
             continue
         ma = _metrics(ra)
         t.add_row(
-            name,
+            label,
             fmt_quality(mb["quality"]),
             _delta(mb["quality"], ma["quality"], suffix="%", pct=True),
             fmt_tps(mb["tps"]),

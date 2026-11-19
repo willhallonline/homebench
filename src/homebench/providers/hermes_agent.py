@@ -39,6 +39,7 @@ class HermesAgentProvider(Provider):
     """Run one-shot Hermes queries for quality evaluation."""
 
     name = "hermes-agent"
+    quality_only = True
 
     def __init__(
         self,
@@ -46,11 +47,14 @@ class HermesAgentProvider(Provider):
         provider: str = "copilot",
         executable: str = "hermes",
         timeout: float = 300.0,
+        *,
+        tool_free: bool = False,
     ):
         self.models = list(dict.fromkeys(model.strip() for model in (models or []) if model.strip()))
         self.provider = provider
         self.executable = executable
         self.timeout = timeout
+        self.tool_free = tool_free
 
     @property
     def process_hint(self) -> str:
@@ -94,6 +98,13 @@ class HermesAgentProvider(Provider):
             "--provider",
             self.provider,
         ]
+        if self.tool_free:
+            # An explicitly empty toolset list prevents Hermes from loading its defaults.
+            command = [
+                self.executable, "chat", "--safe-mode", "--toolsets=",
+                "--quiet", "--query", prompt,
+                f"--model={model}", f"--provider={self.provider}",
+            ]
         start = time.perf_counter()
         try:
             result = subprocess.run(
@@ -120,7 +131,8 @@ class HermesAgentProvider(Provider):
         content = _final_response(result.stdout)
         if not content:
             raise ProviderError(
-                "Hermes returned no final response; check that -z output is supported"
+                "Hermes returned no final response"
+                + ("" if self.tool_free else "; check that -z output is supported")
             )
         if (
             "The requested model is not supported" in content
@@ -143,11 +155,10 @@ def find_hermes() -> Optional[str]:
     return shutil.which("hermes")
 
 
-def check_hermes(executable: str) -> str:
-    """Verify the full Hermes CLI starts and return its version output."""
+def _hermes_probe(executable: str, *args: str) -> str:
     try:
         result = subprocess.run(
-            [executable, "--version"],
+            [executable, *args],
             capture_output=True,
             text=True,
             errors="replace",
@@ -157,12 +168,29 @@ def check_hermes(executable: str) -> str:
         )
     except (OSError, subprocess.TimeoutExpired) as exc:
         raise ProviderError(f"could not start Hermes: {exc}") from exc
-    version = (result.stdout or result.stderr).strip()
+    output = (result.stdout or result.stderr).strip()
     if result.returncode:
         raise ProviderError(
-            version[:2000] or f"Hermes exited with status {result.returncode}"
+            output[:2000] or f"Hermes exited with status {result.returncode}"
         )
-    return version
+    return output
+
+
+def check_hermes(executable: str) -> str:
+    """Verify the full Hermes CLI starts and return its version output."""
+    return _hermes_probe(executable, "--version")
+
+
+def check_hermes_judge(executable: str) -> None:
+    """Require the flags used for isolated, tool-free judging."""
+    help_text = _hermes_probe(executable, "chat", "--help")
+    required = ("--safe-mode", "--toolsets", "--query", "--quiet")
+    missing = [flag for flag in required if flag not in help_text]
+    if missing:
+        raise ProviderError(
+            f"Hermes chat does not support {', '.join(missing)}; "
+            "update Hermes to use --judge hermes:MODEL"
+        )
 
 
 # Backward-compatible Python names for callers importing the provider helpers.

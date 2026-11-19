@@ -4,15 +4,27 @@ from __future__ import annotations
 
 import argparse
 import sys
-from typing import List, Optional
+from contextlib import ExitStack
+from dataclasses import dataclass
+from typing import Callable, List, Optional
 
 from rich.console import Console
+from rich.markup import escape
 
 from . import __version__
 from .models import ModelInfo
 from .providers import ProviderError, detect_provider, get_provider
+from .providers.base import Provider
+from .providers.harness_cli import HARNESS_CLIS, HarnessCLIProvider
 from .quality import LLMJudge
 from .runner import RunConfig, Runner
+
+
+class _SingleJudge(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        if getattr(namespace, self.dest) is not None or not values.strip() or "," in values:
+            raise argparse.ArgumentError(self, "select exactly one judge for the run")
+        setattr(namespace, self.dest, values)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -27,7 +39,8 @@ def build_parser() -> argparse.ArgumentParser:
     # ---- shared run options (also used when no subcommand is given) ----
     def add_run_options(sp: argparse.ArgumentParser, *, include_provider: bool = True) -> None:
         sp.add_argument("-m", "--models", default=None,
-                        help="comma-separated model names to benchmark")
+                        help="comma-separated model IDs; with run, also accepts HARNESS:MODEL "
+                             "(claude, codex, copilot, hermes, opencode)")
         sp.add_argument("--all", action="store_true",
                         help="benchmark every discovered model "
                              "(default: the 3 smallest)")
@@ -62,8 +75,9 @@ def build_parser() -> argparse.ArgumentParser:
                         help="keep models loaded between runs")
         sp.add_argument("--no-rss", action="store_true",
                         help="disable psutil RSS sampling")
-        sp.add_argument("--judge", default=None, metavar="MODEL",
-                        help="enable LLM-as-judge using MODEL (adds open-ended tasks)")
+        sp.add_argument("--judge", default=None, metavar="MODEL", action=_SingleJudge,
+                        help="score open-ended tasks with MODEL on the benchmark provider, "
+                             "or use copilot:MODEL or hermes:MODEL")
         sp.add_argument("--no-tui", action="store_true",
                         help="use the plain renderer instead of the full-screen TUI")
         sp.add_argument("--tui", action="store_true",
@@ -105,15 +119,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="provider to pass to Hermes (default: copilot)",
     )
     hermes_p.set_defaults(no_speed=True, no_warmup=True, no_rss=True)
-
-    copilot_p = sub.add_parser(
-        "copilot",
-        help="benchmark Copilot CLI responses (quality only)",
-        description="Run the quality suite through GitHub Copilot CLI. "
-                    "Requires the `copilot` command to be installed and signed in.",
-    )
-    add_run_options(copilot_p, include_provider=False)
-    copilot_p.set_defaults(no_speed=True, no_warmup=True, no_rss=True)
 
     list_p = sub.add_parser("list", help="list discovered models and exit")
     list_p.add_argument("--provider", default=None)
@@ -203,7 +208,7 @@ def build_parser() -> argparse.ArgumentParser:
     return p
 
 
-_COMMANDS = {"run", "copilot", "hermes", "list", "tasks", "history", "diff",
+_COMMANDS = {"run", "hermes", "list", "tasks", "history", "diff",
              "throughput", "fit", "report", "doctor"}
 
 
@@ -275,6 +280,95 @@ def _select_models(provider, args, console: Console) -> List[ModelInfo]:
     return selected
 
 
+_HarnessFactory = Callable[[ExitStack, List[str], float, Console], Provider]
+
+
+@dataclass(frozen=True)
+class _HarnessRoute:
+    benchmark: _HarnessFactory
+    judge: Optional[_HarnessFactory] = None
+
+
+def _harness_routes() -> dict[str, _HarnessRoute]:
+    def cli_route(name: str) -> _HarnessRoute:
+        return _HarnessRoute(lambda stack, models, timeout, console: HarnessCLIProvider(name, models, timeout))
+
+    return {
+        "copilot": _HarnessRoute(_open_copilot_provider, _open_copilot_provider),
+        "hermes": _HarnessRoute(
+            lambda stack, models, timeout, console: _open_hermes_provider(models, "copilot", timeout, console),
+            _open_hermes_judge,
+        ),
+        **{name: cli_route(name) for name in HARNESS_CLIS},
+    }
+
+
+def _parse_selector(value: str, routes: dict[str, _HarnessRoute], *, judge: bool = False) -> tuple[str, str]:
+    value = value.strip()
+    bracketed = value.startswith("[")
+    backend, sep, model = value[1:].partition("]:") if bracketed else value.partition(":")
+    if bracketed and (not sep or backend not in routes):
+        raise ProviderError(f"invalid model selector {value!r}; use HARNESS:MODEL "
+                            f"with one of: {', '.join(sorted(routes))}")
+    if sep and backend in routes:
+        if not model.strip():
+            flag = "--judge " if judge else ""
+            raise ProviderError(f"{flag}invalid model selector {value!r}: requires a model name")
+        return backend, model.strip()
+    if not value.strip():
+        raise ProviderError("model ID must not be empty")
+    return "", value.strip()
+
+
+def _select_run_targets(
+    args, console: Console, stack: ExitStack, provider_override: Optional[Provider],
+) -> tuple[Provider, List[ModelInfo], dict[str, Provider]]:
+    entries = [item.strip() for item in (args.models or "").split(",") if item.strip()]
+    if provider_override is not None:
+        if any(item.startswith("[") for item in entries):
+            raise ProviderError("use the run command for bracket-qualified model selectors")
+        return provider_override, _select_models(provider_override, args, console), {}
+
+    routes = _harness_routes()
+    targets = list(dict.fromkeys(_parse_selector(item, routes) for item in entries))
+    if not any(backend for backend, _ in targets):
+        provider = _resolve_provider(args, console)
+        return provider, _select_models(provider, args, console), {}
+    if args.limit:
+        targets = targets[:args.limit]
+    if not targets:
+        raise ProviderError("no model targets selected")
+    if args.no_quality and any(backend for backend, _ in targets):
+        raise ProviderError("CLI model selectors require quality benchmarking; remove --no-quality")
+
+    local_names = [name for backend, name in targets if not backend]
+    local = _resolve_provider(args, console) if local_names else None
+    available = local.list_models() if local is not None else []
+    by_name = {model.name: model for model in available}
+    for name in local_names:
+        if name not in by_name:
+            match = next((model for model in available if model.name.startswith(name)), None)
+            if match is None:
+                raise ProviderError(f"no model matching {name!r} in the benchmark provider")
+            by_name[name] = match
+    models = []
+    adapters: dict[str, Provider] = {}
+    for backend, name in targets:
+        if not backend:
+            model = by_name[name]
+        else:
+            if backend not in adapters:
+                ids = [name for route, name in targets if route == backend]
+                adapters[backend] = routes[backend].benchmark(stack, ids, args.timeout, console)
+            model = ModelInfo(f"[{backend}]:{name}", adapters[backend].name, backend_model=name)
+        if model not in models:
+            models.append(model)
+    providers = {adapter.name: adapter for adapter in adapters.values()}
+    if local is not None:
+        providers[local.name] = local
+    return local or next(iter(adapters.values())), models, providers
+
+
 def _resolve_suite(args):
     """Build a custom suite from --tasks / --add-tasks, or None for built-in."""
     from .quality import default_suite, load_packs
@@ -289,12 +383,34 @@ def _resolve_suite(args):
     return suite
 
 
-def _build_runner(provider, args) -> Runner:
-    judge = None
-    include_open = False
-    if getattr(args, "judge", None):
-        judge = LLMJudge(provider, args.judge)
-        include_open = True
+def _resolve_judge(provider, args, console: Console, stack: ExitStack, *, qualified_only=False) -> Optional[LLMJudge]:
+    if not args.judge or args.no_quality:
+        return None
+    routes = _harness_routes()
+    backend, model = _parse_selector(args.judge, routes, judge=True)
+    if not backend:
+        return LLMJudge(_resolve_provider(args, console) if qualified_only else provider, model)
+    factory = routes[backend].judge
+    if factory is None:
+        raise ProviderError(f"[{backend}] supports benchmarking but is not available as a judge")
+    return LLMJudge(factory(stack, [model], args.timeout, console), model)
+
+
+def _open_hermes_judge(stack: ExitStack, models: List[str], timeout: float, console: Console) -> Provider:
+    from .providers.hermes_agent import HermesAgentProvider, check_hermes_judge, find_hermes
+
+    executable = find_hermes()
+    if not executable:
+        raise ProviderError("--judge hermes:MODEL needs the Hermes CLI on PATH")
+    check_hermes_judge(executable)
+    return HermesAgentProvider(models=models, executable=executable, timeout=timeout, tool_free=True)
+
+
+def _build_runner(
+    provider: Provider, args, judge: Optional[LLMJudge] = None,
+    *, providers: Optional[dict[str, Provider]] = None,
+) -> Runner:
+    include_open = judge is not None
     suite = _resolve_suite(args)
     if suite is not None:
         include_open = include_open or any(t.grader is None for t in suite)
@@ -316,7 +432,7 @@ def _build_runner(provider, args) -> Runner:
         use_cache=not getattr(args, "no_cache", False),
         refresh_cache=getattr(args, "refresh_cache", False),
     )
-    return Runner(provider, config, judge=judge)
+    return Runner(provider, config, judge=judge, providers=providers)
 
 
 def _export(result, args, console: Console) -> None:
@@ -433,11 +549,11 @@ def cmd_diff(args, console: Console) -> int:
             console.print("\n[red]✗ regressions detected:[/red]")
             for r in regs:
                 if r.metric == "quality":
-                    console.print(f"  [bold]{r.model}[/bold]: quality "
+                    console.print(f"  [bold]{escape(r.model)}[/bold]: quality "
                                   f"{r.base:.0f}% → {r.new:.0f}% "
                                   f"(−{r.drop:g} pts > {r.threshold:g})")
                 else:
-                    console.print(f"  [bold]{r.model}[/bold]: tok/s "
+                    console.print(f"  [bold]{escape(r.model)}[/bold]: tok/s "
                                   f"{r.base:.1f} → {r.new:.1f} "
                                   f"(−{r.drop:g}% > {r.threshold:g}%)")
             return 1
@@ -634,26 +750,30 @@ def cmd_throughput(args, console: Console) -> int:
 def cmd_run(args, console: Console, provider_override=None) -> int:
     from .quality import PackError
 
-    try:
-        provider = provider_override or _resolve_provider(args, console)
-        models = _select_models(provider, args, console)
-        runner = _build_runner(provider, args)
-    except ProviderError as exc:
-        console.print(f"[red]error:[/red] {exc}")
-        return 1
-    except PackError as exc:
-        console.print(f"[red]task pack error:[/red] {exc}")
-        return 1
+    with ExitStack() as stack:
+        try:
+            provider, models, providers = _select_run_targets(args, console, stack, provider_override)
+            judge = _resolve_judge(
+                provider, args, console, stack,
+                qualified_only=all(model.backend_model for model in models),
+            )
+            runner = _build_runner(provider, args, judge, providers=providers)
+        except ProviderError as exc:
+            console.print(f"[red]error:[/red] {escape(str(exc))}")
+            return 1
+        except PackError as exc:
+            console.print(f"[red]task pack error:[/red] {exc}")
+            return 1
 
-    use_tui = _should_use_tui(args, console)
-    if use_tui:
-        from .tui.app import run_tui
+        use_tui = _should_use_tui(args, console)
+        if use_tui:
+            from .tui.app import run_tui
 
-        result = run_tui(runner, models)
-    else:
-        from .plainui import run_plain
+            result = run_tui(runner, models)
+        else:
+            from .plainui import run_plain
 
-        result = run_plain(runner, models, console)
+            result = run_plain(runner, models, console)
 
     if result is None:
         return 1
@@ -677,9 +797,7 @@ def cmd_run(args, console: Console, provider_override=None) -> int:
     return 0
 
 
-def cmd_copilot(args, console: Console) -> int:
-    import os
-
+def _open_copilot_provider(stack: ExitStack, models: List[str], timeout: float, console: Console):
     from .copilot_bridge import (
         CopilotBridge,
         CopilotCLIError,
@@ -688,43 +806,23 @@ def cmd_copilot(args, console: Console) -> int:
     )
     from .providers.copilot_cli import CopilotCLIProvider
 
-    model_names = [
-        model.strip()
-        for model in (args.models or os.environ.get("COPILOT_MODEL", "")).split(",")
-        if model.strip()
-    ]
-    if not model_names:
-        console.print(
-            "[red]error:[/red] choose a model with [bold]-m MODEL[/bold] "
-            "or set [bold]COPILOT_MODEL[/bold]"
-        )
-        return 2
     executable = find_copilot_cli()
     if not executable:
-        console.print(
-            "[red]error:[/red] GitHub Copilot CLI was not found. "
+        raise ProviderError(
+            "GitHub Copilot CLI was not found. "
             "Install it from https://docs.github.com/en/copilot/how-tos/"
             "copilot-cli/set-up-copilot-cli/install-copilot-cli"
         )
-        return 1
-
     try:
         version = check_copilot_cli(executable)
         if version:
             console.print(f"[dim]Copilot CLI {version}[/dim]")
-        with CopilotBridge(model_names, executable, timeout=args.timeout) as bridge:
-            provider = CopilotCLIProvider(host=bridge.url)
-            console.print(
-                "[dim]Using Copilot CLI through a temporary localhost bridge; "
-                "quality only (no comparable speed or memory metrics).[/dim]\n"
-            )
-            return cmd_run(args, console, provider_override=provider)
+        bridge = stack.enter_context(CopilotBridge(models, executable, timeout=timeout))
     except CopilotCLIError as exc:
-        console.print(f"[red]error:[/red] {exc}")
-        return 1
+        raise ProviderError(str(exc)) from exc
     except OSError as exc:
-        console.print(f"[red]error:[/red] could not start Copilot bridge: {exc}")
-        return 1
+        raise ProviderError(f"could not start Copilot bridge: {exc}") from exc
+    return CopilotCLIProvider(host=bridge.url)
 
 
 def _should_use_tui(args, console: Console) -> bool:
@@ -736,14 +834,24 @@ def _should_use_tui(args, console: Console) -> bool:
     return console.is_terminal and sys.stdin.isatty()
 
 
-def cmd_hermes(args, console: Console) -> int:
-    import os
-
+def _open_hermes_provider(models: List[str], upstream: str, timeout: float, console: Console):
     from .providers.hermes_agent import (
         HermesAgentProvider,
         check_hermes,
         find_hermes,
     )
+
+    executable = find_hermes()
+    if not executable:
+        raise ProviderError("Hermes CLI was not found. Install it and ensure hermes is on PATH.")
+    version = check_hermes(executable)
+    if version:
+        console.print(f"[dim]Hermes {version}[/dim]")
+    return HermesAgentProvider(models=models, provider=upstream, executable=executable, timeout=timeout)
+
+
+def cmd_hermes(args, console: Console) -> int:
+    import os
 
     model_names = [
         model.strip()
@@ -756,24 +864,12 @@ def cmd_hermes(args, console: Console) -> int:
             "or set [bold]HERMES_MODEL[/bold]"
         )
         return 2
-    executable = find_hermes()
-    if not executable:
-        console.print(
-            "[red]error:[/red] Hermes CLI was not found. "
-            "Install it and ensure [bold]hermes[/bold] is on PATH."
-        )
-        return 1
+    if any(model.startswith("[") for model in model_names):
+        console.print("[red]error:[/red] use the run command for bracket-qualified model selectors")
+        return 2
 
     try:
-        version = check_hermes(executable)
-        if version:
-            console.print(f"[dim]Hermes {version}[/dim]")
-        provider = HermesAgentProvider(
-            models=model_names,
-            provider=args.provider,
-            executable=executable,
-            timeout=args.timeout,
-        )
+        provider = _open_hermes_provider(model_names, args.provider, args.timeout, console)
         console.print(
             "[dim]Using the Hermes CLI in one-shot mode; "
             "quality only (no comparable speed or memory metrics).[/dim]\n"
@@ -797,8 +893,6 @@ def main(argv: Optional[List[str]] = None) -> int:
         return cmd_hermes(args, console)
     if command == "list":
         return cmd_list(args, console)
-    if command == "copilot":
-        return cmd_copilot(args, console)
     if command == "tasks":
         return cmd_tasks(args, console)
     if command == "doctor":

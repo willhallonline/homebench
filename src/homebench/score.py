@@ -23,12 +23,17 @@ def _mem(r: ModelReport) -> int:
     return r.memory.size_bytes or r.model.size_bytes or 0
 
 
+def _value_candidates(reports: List[ModelReport]) -> List[ModelReport]:
+    # Qualified CLI entries have quality scores but no comparable laptop metrics.
+    return [r for r in reports if not r.error and not r.model.backend_model]
+
+
 def value_scores(reports: List[ModelReport],
                  w_quality: float = W_QUALITY,
                  w_speed: float = W_SPEED,
                  w_memory: float = W_MEMORY) -> Dict[str, float]:
-    """Return {model_name: value 0..100} for non-errored models."""
-    ok = [r for r in reports if not r.error]
+    """Return {model_name: value 0..100} for comparable, non-errored models."""
+    ok = _value_candidates(reports)
     if not ok:
         return {}
     max_q = max((r.quality_score for r in ok if r.quality_score is not None), default=0) or 0
@@ -65,7 +70,7 @@ def best_value(reports: List[ModelReport]) -> Tuple[Optional[ModelReport], Optio
 def value_verdict(reports: List[ModelReport]) -> Optional[str]:
     """One-line 'best model for your laptop' headline, or None if not rankable."""
     rep, score = best_value(reports)
-    if rep is None or len([r for r in reports if not r.error]) < 2:
+    if rep is None or len(_value_candidates(reports)) < 2:
         return None  # need at least two models for a "pick" to mean anything
     from .report import fmt_bytes, fmt_quality, fmt_tps  # local import avoids cycle
 
