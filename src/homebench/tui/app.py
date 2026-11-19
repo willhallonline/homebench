@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from typing import Dict, List, Optional
 
+from rich.markup import escape
+from rich.text import Text
 from textual.app import App, ComposeResult
 from textual.containers import Vertical
 from textual.widgets import DataTable, Footer, Header, Static
@@ -38,7 +40,7 @@ from ..runner import (
 
 class HomebenchApp(App):
     TITLE = "homebench"
-    SUB_TITLE = "local LLM leaderboard"
+    SUB_TITLE = "LLM leaderboard"
 
     CSS = """
     Screen { background: $surface; }
@@ -153,12 +155,12 @@ class HomebenchApp(App):
         pending = [n for n in self.order if n not in self.reports]
         for r in rank_reports(done):
             if r.error:
-                table.add_row(r.model.name, "[red]error[/red]",
+                table.add_row(Text(r.model.name), "[red]error[/red]",
                               "–", "–", "–", "–", "–", "–")
                 continue
             passed = f"{r.tasks_passed}/{len(r.task_results)}" if r.task_results else "–"
             table.add_row(
-                r.model.name, "[green]done[/green]",
+                Text(r.model.name), "[green]done[/green]",
                 fmt_quality(r.quality_score), passed,
                 fmt_tps(r.speed.tokens_per_sec), fmt_ttft(r.speed.ttft_s),
                 _memory_display(r), _peak_display(r),
@@ -166,17 +168,17 @@ class HomebenchApp(App):
         for n in pending:
             label = self._status_label(n)
             style = "yellow" if label != "queued" else "dim"
-            table.add_row(n, f"[{style}]{label}[/{style}]",
+            table.add_row(Text(n), f"[{style}]{label}[/{style}]",
                           "–", "–", "–", "–", "–", "–")
 
     def _set_status(self, model: str, phase: str, note: Optional[str]) -> None:
         widget = self.query_one("#status", Static)
         if phase == "error":
-            widget.update(f"[red]{model}: {note or 'error'}[/red]")
+            widget.update(f"[red]{escape(model)}: {escape(note or 'error')}[/red]")
         else:
             done = len(self.reports)
             widget.update(
-                f"Running [b]{model}[/b] — {self._status_label(model)}  "
+                f"Running [b]{escape(model)}[/b] — {self._status_label(model)}  "
                 f"([green]{done}[/green]/{len(self.order)} models done)"
             )
 

@@ -11,7 +11,7 @@ from __future__ import annotations
 import statistics
 import time
 from dataclasses import dataclass, field
-from typing import Callable, List, Optional
+from typing import Callable, List, Mapping, Optional
 
 from .metrics.memory import RSSSampler
 from .models import (
@@ -116,8 +116,11 @@ class Runner:
         provider: Provider,
         config: Optional[RunConfig] = None,
         judge: Optional[LLMJudge] = None,
+        *,
+        providers: Optional[Mapping[str, Provider]] = None,
     ):
         self.provider = provider
+        self.providers = dict(providers or {})
         self.config = config or RunConfig()
         self.judge = judge
         self.cache = None
@@ -126,9 +129,16 @@ class Runner:
             self.cache = ResponseCache(enabled=True, refresh=self.config.refresh_cache)
 
     # ------------------------------------------------------------------
+    @property
+    def provider_name(self) -> str:
+        return "mixed" if len(self.providers) > 1 else self.provider.name
+
+    def _provider_for(self, model: ModelInfo) -> Provider:
+        return self.providers.get(model.provider, self.provider)
+
     def run(self, models: List[ModelInfo], observer: Observer = None) -> BenchmarkResult:
         result = BenchmarkResult(
-            provider=self.provider.name,
+            provider=self.provider_name,
             config=self.config.to_dict(),
             environment=self._capture_environment(),
         )
@@ -159,26 +169,30 @@ class Runner:
     def _run_model(self, model: ModelInfo, observer: Observer) -> ModelReport:
         report = ModelReport(model=model)
         cfg = self.config
+        provider = self._provider_for(model)
         # Sample RSS across the WHOLE per-model run (load + speed + every quality
         # generation) so the reported peak reflects sustained use, not a single
         # call. Baseline is captured before the model loads.
-        sampler = RSSSampler(name_contains=self.provider.process_hint) if cfg.sample_rss else None
+        sampler = (
+            RSSSampler(name_contains=provider.process_hint)
+            if cfg.sample_rss and not provider.quality_only else None
+        )
         if sampler is not None:
             sampler.__enter__()
         try:
-            if cfg.warmup:
+            if cfg.warmup and not provider.quality_only:
                 _emit(observer, EV_PHASE, model=model.name, phase="warmup")
-                self.provider.warmup(model.name, timeout=cfg.timeout)
+                provider.warmup(model.request_name, timeout=cfg.timeout)
 
-            if cfg.run_speed:
+            if cfg.run_speed and not provider.quality_only:
                 _emit(observer, EV_PHASE, model=model.name, phase="speed")
-                report.speed, report.memory = self._measure_speed(model.name)
+                report.speed, report.memory = self._measure_speed(provider, model.request_name)
 
             if cfg.run_quality:
                 report.task_results = self._run_quality(model, observer)
 
-            if cfg.unload_between:
-                self.provider.unload(model.name)
+            if cfg.unload_between and not provider.quality_only:
+                provider.unload(model.request_name)
         except ProviderError as exc:
             report.error = str(exc)
             _emit(observer, EV_PHASE, model=model.name, phase="error", note=str(exc))
@@ -190,12 +204,12 @@ class Runner:
         return report
 
     # ------------------------------------------------------------------
-    def _measure_speed(self, model: str):
+    def _measure_speed(self, provider: Provider, model: str):
         cfg = self.config
         runs: List[SpeedMetrics] = []
         mem = MemoryMetrics()
         for _ in range(max(1, cfg.repeat)):
-            gen = self.provider.generate(
+            gen = provider.generate(
                 model,
                 cfg.speed_prompt,
                 max_tokens=cfg.speed_max_tokens,
@@ -212,7 +226,7 @@ class Runner:
 
         # Resident memory: the provider's view (RSS peak is sampled per-model in
         # _run_model, spanning the whole run).
-        pmem = self.provider.memory(model)
+        pmem = provider.memory(model)
         mem.size_bytes = pmem.size_bytes
         mem.vram_bytes = pmem.vram_bytes
         return best, mem
@@ -291,8 +305,8 @@ class Runner:
         else:
             start = time.perf_counter()
             try:
-                gen = self.provider.generate(
-                    model.name, task.prompt,
+                gen = self._provider_for(model).generate(
+                    model.request_name, task.prompt,
                     max_tokens=task.max_tokens,
                     temperature=cfg.temperature,
                     seed=cfg.seed,

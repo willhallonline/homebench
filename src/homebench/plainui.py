@@ -86,20 +86,20 @@ class PlainReporter:
         pending = [n for n in self.order if n not in self.reports]
         for r in rank_reports(done):
             if r.error:
-                table.add_row(r.model.name, Text("error", style="red"),
+                table.add_row(Text(r.model.name), Text("error", style="red"),
                               "–", "–", "–", "–", "–", "–")
                 continue
             passed = f"{r.tasks_passed}/{len(r.task_results)}" if r.task_results else "–"
             table.add_row(
-                r.model.name, Text("done", style="green"),
+                Text(r.model.name), Text("done", style="green"),
                 fmt_quality(r.quality_score), passed,
                 fmt_tps(r.speed.tokens_per_sec), fmt_ttft(r.speed.ttft_s),
                 _memory_display(r), _peak_display(r),
             )
         for n in pending:
-            table.add_row(n, self._status_text(n), "–", "–", "–", "–", "–", "–")
+            table.add_row(Text(n), self._status_text(n), "–", "–", "–", "–", "–", "–")
 
-        header = Text("homebench — benchmarking local models", style="bold magenta")
+        header = Text("homebench — benchmarking models", style="bold magenta")
         if self.current is not None and self.quality[self.current].tasks:
             tasks = Table(
                 title=Text(f"Quality tasks for {self.current}"),
@@ -127,7 +127,7 @@ def run_plain(runner: Runner, models: List[ModelInfo], console: Console) -> Benc
     reporter = PlainReporter(models, total_tasks)
 
     console.print(
-        f"[bold]homebench[/bold] · provider [cyan]{runner.provider.name}[/cyan] · "
+        f"[bold]homebench[/bold] · provider [cyan]{runner.provider_name}[/cyan] · "
         f"{len(models)} model(s)\n"
     )
     with Live(reporter.render(), console=console, refresh_per_second=8) as live:

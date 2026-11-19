@@ -8,6 +8,7 @@ from datetime import datetime
 from typing import List, Optional
 
 from rich.table import Table
+from rich.text import Text
 
 from .models import BenchmarkResult, ModelReport
 
@@ -111,14 +112,14 @@ def leaderboard_table(result: BenchmarkResult, title: str = "homebench") -> Tabl
     for i, r in enumerate(ranked, start=1):
         if r.error:
             table.add_row(
-                str(i), r.model.name, r.model.parameter_size or "–",
+                str(i), Text(r.model.name), r.model.parameter_size or "–",
                 "[red]error[/red]", "–", "–", "–", "–", "–",
             )
             continue
         passed = f"{r.tasks_passed}/{len(r.task_results)}" if r.task_results else "–"
         table.add_row(
             str(i),
-            r.model.name,
+            Text(r.model.name),
             r.model.parameter_size or "–",
             fmt_quality(r.quality_score),
             passed,

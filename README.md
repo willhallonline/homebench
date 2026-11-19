@@ -150,6 +150,34 @@ command. `HERMES_MODEL` can supply the model instead of `-m`.
 Hermes benchmarking is quality-only. Comparable speed, memory, and token
 usage metrics are not available through this CLI path.
 
+### Compare local models and CLI harnesses in one run
+
+```bash
+homebench --provider ollama -m 'qwen:9b,[hermes]:gpt-6-luna,[copilot]:gpt-6-luna'
+homebench -m '[claude]:sonnet,[codex]:CODEX_MODEL,[opencode]:PROVIDER/MODEL' --judge '[copilot]:gpt-6-luna'
+```
+
+In the default `homebench run` command, unqualified names use the selected
+or auto-detected provider. `[HARNESS]:MODEL` uses that CLI and appears as a separate leaderboard entry,
+even if another harness uses the same model ID. Hermes uses its Copilot
+upstream by default; `--provider` selects the provider for unqualified names
+only. A list containing only qualified names needs no local benchmark provider.
+
+All entries use the same quality suite and, if enabled, the same `--judge`.
+The CLI entries are quality-only: Homebench skips their speed and memory
+probes and excludes them from the laptop value recommendation. Use
+`--no-speed --no-warmup --no-rss` if you want to compare quality only.
+
+| Selector | CLI requirements |
+| --- | --- |
+| `[claude]:MODEL` | Claude Code with `--bare`. Configure `ANTHROPIC_API_KEY` or the supported cloud-provider credentials for bare mode. |
+| `[codex]:MODEL` | An authenticated Codex CLI supporting `exec --ephemeral --ignore-user-config`. Runs in a temporary directory with a read-only sandbox and no approval prompts, not with tools disabled. |
+| `[opencode]:PROVIDER/MODEL` | OpenCode supporting `run --pure --format=json`. Use an available built-in provider and its configured credentials; Homebench does not load your OpenCode config directory or plugins. |
+
+These three adapters are benchmark-only. `--judge` accepts one local model,
+`[copilot]:MODEL`, or `[hermes]:MODEL`. The original `copilot:MODEL` and
+`hermes:MODEL` judge spellings still work.
+
 When open-ended tasks are included (for example, `--full --judge MODEL`), each
 model's quality run has two visible phases in both the full-screen and plain
 live views: **1/2 Generate and auto-grade**, then
@@ -196,7 +224,14 @@ Auto-detection tries Ollama → LM Studio → llama.cpp → vLLM (the `mlx` and 
 
 The suite is small on purpose — enough tasks across categories to *separate* models, few enough that every model runs in a couple of minutes on a laptop. Each task is graded deterministically (exact numeric match, multiple-choice letter, substring, valid-JSON, regex). Temperature is 0 and a fixed seed is used for reproducibility. See `homebench tasks` for the list.
 
-The optional `--judge MODEL` flag turns on an LLM-as-judge (any local model) that scores open-ended tasks 1–5 against a reference answer. Ollama judge calls disable separate thinking output when supported so the score can be returned directly. It's a signal, not an oracle.
+The optional `--judge MODEL` flag scores open-ended tasks 1–5 against a reference answer. A bare model ID, including a tag like `qwen3:8b`, uses the benchmark provider. To choose a judge independently, use either existing CLI integration:
+
+```bash
+homebench --provider ollama --judge copilot:gpt-6-luna
+homebench copilot -m gpt-6-luna --judge hermes:gpt-6-luna
+```
+
+Both selectors work with `run`, `copilot`, and `hermes`. Select one judge per run. Hermes judging uses Hermes's Copilot upstream, independent of the benchmark's `--provider`, and requires a Hermes CLI that supports `chat --safe-mode` and `--toolsets`. A CLI judge sends each graded task's prompt, reference answer, and benchmark response to its upstream. Ollama judge calls disable separate thinking output when supported so the score can be returned directly. Judge scores are a signal, not an oracle.
 
 ### Fast by default
 
@@ -338,6 +373,15 @@ pytest -q
 ```
 
 The codebase is small and layered: `providers/` (pluggable backends), `quality/` (tasks, graders, judge), `metrics/` (memory sampling), `runner.py` (orchestration), `report.py` (export + tables), and `tui/` + `plainui.py` (rendering). Adding a provider means subclassing `Provider` (or `OpenAICompatibleProvider`) and registering it; adding a task means appending to the suite in `quality/tasks.py` with a reference that satisfies its grader (enforced by the tests).
+
+For a new headless CLI benchmark harness, register its executable, argument builder,
+and response parser in `HARNESS_CLIS` in `src/homebench/providers/harness_cli.py`.
+Homebench launches it without a shell in a fresh temporary directory, passes one
+prompt over stdin with an explicit model ID, and applies the request timeout.
+The parser must return only assistant answer text and reject failed or incomplete
+runs. Use a documented non-interactive mode, limit ambient config and tools, and
+test successful and failed output with fixtures. Only register a judge factory
+after verifying that benchmark answers can't trigger tools, hooks, or MCP servers.
 
 Contributions welcome — new providers, task packs, and metrics especially.
 

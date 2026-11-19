@@ -222,12 +222,12 @@ class CopilotBridge:
         return f"http://{host}:{port}"
 
     def __enter__(self) -> "CopilotBridge":
+        self._cwd = os.path.join(os.path.expanduser("~"), ".homebench", "copilot")
+        os.makedirs(self._cwd, exist_ok=True)
         self._server = self._Server(("127.0.0.1", 0), _CopilotHandler)
         self._server.bridge = self
         self._thread = threading.Thread(target=self._server.serve_forever, daemon=True)
         self._thread.start()
-        self._cwd = os.path.join(os.path.expanduser("~"), ".homebench", "copilot")
-        os.makedirs(self._cwd, exist_ok=True)
         return self
 
     def __exit__(self, _exc_type, _exc, _traceback) -> None:

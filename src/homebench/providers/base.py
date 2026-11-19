@@ -35,6 +35,7 @@ class Provider(ABC):
 
     #: short, stable identifier (also the CLI ``--provider`` value)
     name: str = "base"
+    quality_only: bool = False
 
     @property
     def process_hint(self) -> str:
